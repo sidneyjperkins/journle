@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NEJM-le</title>
+  <style>
+    body {
+      font-family: "Quadraat", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #f4f6f8;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .game {
+      background: white;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      width: 460px;
+      text-align: center;
+    }
+    h1 {
+      margin-bottom: 0.25rem;
+      font-family: "Galliard", serif;
+    }
+    p { color: #555; font-size: 0.9rem; }
+
+    .field-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+    }
+
+    .field-btn {
+      padding: 0.4rem 0.8rem;
+      border: 1px solid #4f46e5;
+      border-radius: 6px;
+      background: white;
+      color: #4f46e5;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .field-btn.active {
+      background: #4f46e5;
+      color: white;
+    }
+
+    .letters, .row {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+    }
+
+    input.letter {
+      width: 44px;
+      height: 44px;
+      text-align: center;
+      font-size: 1.3rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      border: 2px solid #ccc;
+      border-radius: 6px;
+    }
+
+    .correct { background: #16a34a; color: white; border-color: #16a34a; }
+    .present { background: #ca8a04; color: white; border-color: #ca8a04; }
+    .absent  { background: #6b7280; color: white; border-color: #6b7280; }
+
+    button {
+      margin-top: 1rem;
+      width: 100%;
+      padding: 0.6rem;
+      font-size: 1rem;
+      cursor: pointer;
+      border: none;
+      border-radius: 6px;
+      background: #4f46e5;
+      color: white;
+    }
+    button.secondary { background: #64748b; margin-top: 0.5rem; }
+
+    .hints {
+      margin-top: 1rem;
+      background: #f1f5f9;
+      padding: 0.75rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      text-align: left;
+    }
+
+    .hints li { margin-bottom: 0.4rem; }
+    .message { margin-top: 0.75rem; font-weight: bold; }
+
+    .hyphen {
+      font-size: 1.4rem;
+      font-weight: bold;
+      line-height: 44px;
+      width: 12px;
+      text-align: center;
+    }
+
+
+  </style>
+</head>
+<body>
+  <div class="game">
+    <h1> New England Journal of Medicine-le</h1>
+    <p>Guess the name of a randomized controlled trial published in NEJM.</p>
+
+    <div class="field-buttons">
+      <button class="field-btn active" data-field="all">All</button>
+      <button class="field-btn" data-field="cardiology">Cardiology</button>
+      <button class="field-btn" data-field="internal">Internal Medicine</button>
+      <button class="field-btn" data-field="surgery">Surgery</button>
+    </div>
+
+    <div class="hints">
+      <strong>Abstract</strong>
+      <ul id="hintList"></ul>
+    </div>
+
+    <div id="history"></div>
+    <div class="letters" id="letters"></div>
+
+    <div class="message" id="message"></div>
+
+    <button id="guessBtn">Guess</button>
+    <button class="secondary" onclick="newGame()">New Trial</button>
+    <button id="shareBtn" class="secondary" style="display:none;">Share Results</button>
+
+  </div>
+
+  <script>
+    
+    const trials = [
+
+    // Cardiology Trials
+
+      { name: "SPRINT", field: "cardiology", hints: [
+        "Background: Investigated whether intensive BP lowering reduces cardiovascular events; builds on prior hypertension studies.",
+        "Population: Adults at high cardiovascular risk without diabetes or prior stroke.",
+        "Primary outcome: Intensive BP control reduced major cardiovascular events and all-cause mortality.",
+        "Secondary outcomes: Higher rates of hypotension and acute kidney injury; influenced later guideline targets."
+      ]},
+      { name: "COURAGE", field: "cardiology", hints: [
+        "Background: Evaluated PCI plus medical therapy versus medical therapy alone for stable ischemic heart disease; informed by earlier revascularization studies.",
+        "Population: Patients with stable ischemic heart disease.",
+        "Primary outcome: No reduction in death or myocardial infarction with PCI plus medical therapy compared to medical therapy alone.",
+        "Secondary outcomes: Improved angina control; findings shaped later trials like ISCHEMIA and ORBITA."
+      ]},
+      { name: "HOPE", field: "cardiology", hints: [
+        "Background: Tested ACE inhibition for high-risk patients without heart failure; builds on smaller ACE inhibitor studies.",
+        "Population: High-risk adults without heart failure.",
+        "Primary outcome: Ramipril reduced cardiovascular death, MI, and stroke.",
+        "Secondary outcomes: Reduced new-onset diabetes; influenced subsequent cardiovascular trials."
+      ]},
+      { name: "PARTNER", field: "cardiology", hints: [
+        "Background: Examined TAVR in severe aortic stenosis patients at high surgical risk; builds on early TAVR feasibility studies.",
+        "Population: Severe aortic stenosis, high or prohibitive surgical risk.",
+        "Primary outcome: TAVR improved survival compared with medical therapy.",
+        "Secondary outcomes: More vascular complications; led to trials expanding TAVR to lower-risk populations."
+      ]},
+
+      { name: "A-HeFT", field: "cardiology", hints: [
+        "Background: A subgroup analysis of the V-HeFT trial (1986) suggested a survival benefit for isordil-hydral for self-identified African American patients.",
+         "Population: Self-identified African American patients with NYHA III-IV HFrEF with EF <35% were randomized to ISDN-hydral (N=518) or placebo (N=532).",
+         "Primary outcome: Composite score of death, first hospitalization for heart failure, and change in quality of life favored isordil-hydral.",
+         "Secondary outcomes: All-cause mortality was 6.2% vs 10.2% (RR 0.61) favoring isordil-hydral over placebo (NNT=25). ISDN-hydral also resulted in reduced HF hospitalization and improved quality of life at 6 months."
+      ], pearls: "Headache and dizziness were more common in intervention group. A-HeFT was published in 2004." },
+
+      { name: "BLOCK-AF", field: "cardiology", hints: [
+         "Background: The MADIT-CRT trial demonstrated that among patients with HF and LVEF ≤ 30% and QRS duration ≥130ms, placement of an ICD w/ CRT reduced mortality or HF events when compared to ICD placement alone (HR 0.66). However, the role of CRT in patients with high degree SA or AV block with mildly reduced EF was not well understood.",
+         "Population: Patients with high-degree SA or AV nodal dysfunction and LVEF <50% with NHYA class I-III symptoms were randomized to biventricular pacing (N=349) or RV pacing (N=342).",
+         "Primary outcome: CRT resulted in a 10% absolute risk reduction in death, urgent care visit for heart failure requiring IV diuretics, or 15% increase in LVESVi compared to patients undergoing RV pacing (HR 0.74).",
+         "Secondary outcomes: CRT reduced risk of death or urgent care visit (HR 0.73), death or hospitalization for heart failure (HR 0.78), death (HR 0.83), and hospitalization for heart failure (HR 0.70)."
+       ],
+          pearls: "Left ventricular lead-related complications occurred in 6.4% of patients."
+        },
+
+      { name: "***", field: "cardiology", hints: [
+        "Background: ***",
+        "Population: ***",
+        "Primary outcome: ***",
+        "Secondary outcomes: ***"
+      ]},
+
+      // { name: "***", field: "cardiology", hints: [
+      //   "Background: ***",
+      //   "Population: ***",
+      //   "Primary outcome: ***",
+      //   "Secondary outcomes: ***"
+      // ]},
+
+      // { name: "***", field: "cardiology", hints: [
+      //   "Background: ***",
+      //   "Population: ***",
+      //   "Primary outcome: ***",
+      //   "Secondary outcomes: ***"
+      // ]},
+
+
+      // Surgery Trials
+
+      { name: "FOCUS", field: "surgery", hints: [
+        "Background: Studied restrictive versus liberal transfusion strategies in hip fracture surgery; builds on prior perioperative transfusion research.",
+        "Population: Elderly patients undergoing hip fracture surgery.",
+        "Primary outcome: Restrictive transfusion strategy was noninferior for functional recovery.",
+        "Secondary outcomes: No difference in mortality; influenced later perioperative transfusion guidelines."
+      ]},
+
+      // Internal Medicine Trials
+
+      { name: "RECOVERY", field: "internal", hints: [
+        "Background: Investigated repurposed drugs for COVID-19, building on early pandemic antiviral trials.",
+        "Population: Hospitalized COVID-19 patients across UK NHS hospitals.",
+        "Primary outcome: Dexamethasone reduced 28-day mortality.",
+        "Secondary outcomes: No benefit in patients not requiring oxygen; informed multiple subsequent COVID-19 trials."
+      ]},
+      { name: "ACCORD", field: "internal", hints: [
+        "Background: Tested intensive glucose lowering in type 2 diabetes; built on UKPDS findings.",
+        "Population: Adults with type 2 diabetes and high cardiovascular risk.",
+        "Primary outcome: Intensive glycemic control increased all-cause mortality.",
+        "Secondary outcomes: Reduced nonfatal MI; influenced subsequent glycemic target recommendations."
+      ]}
+    ];
+
+    let trial;
+    let attempts;
+    let inputs;
+    let shownHints;
+    let currentField = 'all';
+
+    document.querySelectorAll('.field-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.field-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentField = btn.getAttribute('data-field');
+        newGame();
+      });
+    });
+
+    function setupInputs() {
+      const container = document.getElementById("letters");
+      container.innerHTML = "";
+
+      inputs = [];
+
+      for (let i = 0; i < trial.name.length; i++) {
+        const char = trial.name[i];
+
+        if (char === "-") {
+          const dash = document.createElement("span");
+          dash.className = "hyphen";
+          dash.textContent = "-";
+          container.appendChild(dash);
+        } else {
+          const input = document.createElement("input");
+          input.className = "letter";
+          input.maxLength = 1;
+          input.dataset.index = i;
+
+          input.addEventListener("input", () => {
+            if (input.value) {
+              const next = inputs[inputs.indexOf(input) + 1];
+              if (next) next.focus();
+            }
+          });
+
+          input.addEventListener("keydown", e => {
+            if (e.key === "Backspace" && !input.value) {
+              const prev = inputs[inputs.indexOf(input) - 1];
+              if (prev) prev.focus();
+            }
+            if (e.key === "Enter") submitGuess();
+          });
+
+          inputs.push(input);
+          container.appendChild(input);
+        }
+      }
+
+      if (inputs.length) inputs[0].focus();
+    }
+
+    function addHint() {
+      if (shownHints < trial.hints.length) {
+        const li = document.createElement("li");
+        li.textContent = trial.hints[shownHints];
+        document.getElementById("hintList").appendChild(li);
+        shownHints++;
+      }
+    }
+
+    function revealAllHints() {
+      while (shownHints < trial.hints.length) addHint();
+    }
+
+    function submitGuess() {
+      let guessArray = trial.name.split("");
+
+      inputs.forEach(input => {
+        const idx = Number(input.dataset.index);
+        guessArray[idx] = input.value.toUpperCase();
+      });
+
+      const guess = guessArray.join("");
+
+
+      if (guess.length < trial.name.length) return;
+
+      attempts++;
+      addHint();
+
+      const row = document.createElement("div");
+      row.className = "row";
+
+      [...guess].forEach((letter, i) => {
+        if (letter === "-") {
+          const dash = document.createElement("span");
+          dash.className = "hyphen";
+          dash.textContent = "-";
+          row.appendChild(dash);
+          return;
+        }
+
+        const box = document.createElement("input");
+        box.className = "letter";
+        box.disabled = true;
+        box.value = letter;
+        box.classList.add(
+          letter === trial.name[i]
+            ? "correct"
+            : trial.name.includes(letter)
+            ? "present"
+            : "absent"
+        );
+        row.appendChild(box);
+      });
+
+      document.getElementById("history").appendChild(row);
+
+      // win condition
+      if (guess === trial.name) {
+        let feedback =
+          attempts === 1 ? "Strong work" :
+          attempts === 2 ? "Rockstar" :
+          attempts === 3 ? "Splendid" :
+          attempts === 4 ? "Great persistance" :
+          "Read more";
+
+        document.getElementById("message").textContent = `${feedback}. The trial was ${trial.name}.`;
+
+        revealAllHints();
+
+        // this removes the guess field once the game is won
+        document.getElementById("letters").style.display = "none";
+        document.getElementById("guessBtn").style.display = "none";
+
+        // show the share result button (previously hidden)
+        document.getElementById("shareBtn").style.display = "block";
+
+        return;
+      }
+
+      inputs.forEach(i => i.value = "");
+      inputs[0].focus();
+    }
+
+    function shareResults() {
+      const rows = document.querySelectorAll("#history .row");
+      let output = `NEJM-le ${attempts}/4\n`;
+
+      rows.forEach(row => {
+        const letters = row.querySelectorAll("input.letter");
+        letters.forEach(box => {
+          if (box.classList.contains("correct")) output += "🟩";
+          else if (box.classList.contains("present")) output += "🟨";
+          else output += "⬜";
+        });
+        output += "\n";
+      });
+
+      navigator.clipboard.writeText(output).then(() => {
+        document.getElementById("message").textContent += " (Results copied!)";
+      });
+    }
+
+    function newGame() {
+
+      // restores the guess field
+      document.getElementById("letters").style.display = "flex";
+      document.getElementById("guessBtn").style.display = "block";
+
+      // restores the share result button
+      document.getElementById("shareBtn").style.display = "none";
+
+      const pool = currentField === 'all' ? trials : trials.filter(t => t.field === currentField);
+      trial = pool[Math.floor(Math.random() * pool.length)];
+      attempts = 0;
+      shownHints = 0;
+      document.getElementById("history").innerHTML = "";
+      document.getElementById("message").textContent = "";
+      document.getElementById("hintList").innerHTML = "";
+      setupInputs();
+      addHint();
+    }
+
+    document.getElementById("guessBtn").addEventListener("click", submitGuess);
+    document.getElementById("shareBtn").addEventListener("click", shareResults);
+    newGame();
+  </script>
+</body>
+</html>
