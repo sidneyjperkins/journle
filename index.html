@@ -6,7 +6,7 @@
   <title>NEJM-le</title>
   <style>
     body {
-      font-family: "Quadraat", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      font-family: "Times", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
       background: #f4f6f8;
       display: flex;
       justify-content: center;
@@ -24,7 +24,7 @@
     }
     h1 {
       margin-bottom: 0.25rem;
-      font-family: "Galliard", serif;
+      font-family: "Times", serif;
     }
     p { color: #555; font-size: 0.9rem; }
 
@@ -105,12 +105,50 @@
       text-align: center;
     }
 
+    .space {
+      width: 24px;
+      height: 44px;
+    }
+
+    /* Compact mode for long trial names */
+    .compact input.letter {
+      width: 28px;
+      height: 28px;
+      font-size: 0.9rem;
+    }
+
+    .compact .hyphen {
+      font-size: 1.1rem;
+      line-height: 28px;
+    }
+
+    .compact .space {
+      width: 14px;
+      height: 28px;
+    }
+
+    /* Ultra-compact mode (≥10 letters) */
+    .ultracompact input.letter {
+      width: 16px;
+      height: 16px;
+      font-size: 0.5rem;
+    }
+
+    .ultracompact .hyphen {
+      font-size: 0.7rem;
+      line-height: 16px;
+    }
+
+    .ultracompact .space {
+      width: 7px;
+      height: 16px;
+    }
 
   </style>
 </head>
 <body>
   <div class="game">
-    <h1> New England Journal of Medicine-le</h1>
+    <h1> journ.le</h1>
     <p>Guess the name of a randomized controlled trial published in NEJM.</p>
 
     <div class="field-buttons">
@@ -138,41 +176,42 @@
 
   <script>
     
+    // this is a state variable that can be toggled depending on length of trial name
+    let sizeMode = "normal"; // "normal" | "compact" | "ultracompact"
+
     const trials = [
+
+    // this is where new trials go
+
+      // trial template
+      // { name: "***", field: "cardiology", hints: [
+      //   "Background: ***",
+      //   "Population: ***",
+      //   "Primary outcome: ***",
+      //   "Secondary outcomes: ***"
+      // ],
+      //   pearls: "",
+      //   doi: "",
+      //   link: "",
+      // },
 
     // Cardiology Trials
 
-      { name: "SPRINT", field: "cardiology", hints: [
-        "Background: Investigated whether intensive BP lowering reduces cardiovascular events; builds on prior hypertension studies.",
-        "Population: Adults at high cardiovascular risk without diabetes or prior stroke.",
-        "Primary outcome: Intensive BP control reduced major cardiovascular events and all-cause mortality.",
-        "Secondary outcomes: Higher rates of hypotension and acute kidney injury; influenced later guideline targets."
-      ]},
-      { name: "COURAGE", field: "cardiology", hints: [
-        "Background: Evaluated PCI plus medical therapy versus medical therapy alone for stable ischemic heart disease; informed by earlier revascularization studies.",
-        "Population: Patients with stable ischemic heart disease.",
-        "Primary outcome: No reduction in death or myocardial infarction with PCI plus medical therapy compared to medical therapy alone.",
-        "Secondary outcomes: Improved angina control; findings shaped later trials like ISCHEMIA and ORBITA."
-      ]},
-      { name: "HOPE", field: "cardiology", hints: [
-        "Background: Tested ACE inhibition for high-risk patients without heart failure; builds on smaller ACE inhibitor studies.",
-        "Population: High-risk adults without heart failure.",
-        "Primary outcome: Ramipril reduced cardiovascular death, MI, and stroke.",
-        "Secondary outcomes: Reduced new-onset diabetes; influenced subsequent cardiovascular trials."
-      ]},
-      { name: "PARTNER", field: "cardiology", hints: [
-        "Background: Examined TAVR in severe aortic stenosis patients at high surgical risk; builds on early TAVR feasibility studies.",
-        "Population: Severe aortic stenosis, high or prohibitive surgical risk.",
-        "Primary outcome: TAVR improved survival compared with medical therapy.",
-        "Secondary outcomes: More vascular complications; led to trials expanding TAVR to lower-risk populations."
-      ]},
+      { name: "AATAC", field: "cardiology", hints: [
+        "Background: AFFIRM (2002) and AF-CHF (2008) showed similar outcomes for pharmacologic rate and rhythm control strategies in AF. This 2016 trial compared ablation and amiodarone for treatment of persistent AF in patients with reduced EF.",
+        "Population: Patients with persistent AF, dc-ICD or CRT-D with NYHA II-III symptoms and LVEF ≤ 40% were randomized to catheter ablation (N=102) or amiodarone (N=101).",
+        "Primary outcome: AF-free survival at 24 months was 70% in the ablation group vs 34% in the amiodarone group (p<0.001).",
+        "Secondary outcomes: ablation reduced risk of unplanned hospitalization (RR 0.55) and death (0.44). Ablation also improved LVEF (+8% vs 4% in amio group), 6-minute walk distance (+22 vs +10 in amio group), and MLHFQ score (+11 vs +6 in amio group)."
+      ],
+        pearls: "Patients with AF and CHF are disproporionately committed to rhythm control due to an inability to tolerate rate AV-nodal blockade and negative inotropy. As amiodarone (used in AF-CHF) has a sizeable side-effect profile, the advent of catheter ablation for rhythm control was thought to "},
 
-      { name: "A-HeFT", field: "cardiology", hints: [
+      { name: "A-HEFT", field: "cardiology", hints: [
         "Background: A subgroup analysis of the V-HeFT trial (1986) suggested a survival benefit for isordil-hydral for self-identified African American patients.",
          "Population: Self-identified African American patients with NYHA III-IV HFrEF with EF <35% were randomized to ISDN-hydral (N=518) or placebo (N=532).",
          "Primary outcome: Composite score of death, first hospitalization for heart failure, and change in quality of life favored isordil-hydral.",
          "Secondary outcomes: All-cause mortality was 6.2% vs 10.2% (RR 0.61) favoring isordil-hydral over placebo (NNT=25). ISDN-hydral also resulted in reduced HF hospitalization and improved quality of life at 6 months."
-      ], pearls: "Headache and dizziness were more common in intervention group. A-HeFT was published in 2004." },
+      ], 
+         pearls: "Headache and dizziness were more common in intervention group. A-HeFT was published in 2004." },
 
       { name: "BLOCK-AF", field: "cardiology", hints: [
          "Background: The MADIT-CRT trial demonstrated that among patients with HF and LVEF ≤ 30% and QRS duration ≥130ms, placement of an ICD w/ CRT reduced mortality or HF events when compared to ICD placement alone (HR 0.66). However, the role of CRT in patients with high degree SA or AV block with mildly reduced EF was not well understood.",
@@ -183,27 +222,66 @@
           pearls: "Left ventricular lead-related complications occurred in 6.4% of patients."
         },
 
-      { name: "***", field: "cardiology", hints: [
-        "Background: ***",
-        "Population: ***",
-        "Primary outcome: ***",
-        "Secondary outcomes: ***"
+      { name: "COURAGE", field: "cardiology", hints: [
+        "Background: Evaluated PCI plus medical therapy versus medical therapy alone for stable ischemic heart disease; informed by earlier revascularization studies.",
+        "Population: Patients with stable ischemic heart disease.",
+        "Primary outcome: No reduction in death or myocardial infarction with PCI plus medical therapy compared to medical therapy alone.",
+        "Secondary outcomes: Improved angina control; findings shaped later trials like ISCHEMIA and ORBITA."
       ]},
 
-      // { name: "***", field: "cardiology", hints: [
-      //   "Background: ***",
-      //   "Population: ***",
-      //   "Primary outcome: ***",
-      //   "Secondary outcomes: ***"
-      // ]},
+      { name: "EMPEROR-PRESERVED", field: "cardiology", hints: [
+        "Background: The EMPA-REG OUTCOME (2015) and CANVAS (2017) trials demonstrated improved CKD and CVD outcomes in patients with diabetes. The EMPEROR-Reduced (2020) trial reduced HF exacerbations in HFrEF population. This 2021 trial sought to clarify the role of SGLT2i in HFpEF.",
+        "Population: Patients with LVEF>40% were randomized to empagliflozin (N=2997) or standard therapy (N=2991).",
+        "Primary outcome: Death from cardiovascular etiology or HF hospitalization was reduced in the empagliflozin group (HR 0.79) with NNT of 30.",
+        "Secondary outcomes: HF hospitalizations were reduced in empagliflozin group (HR 0.71 with NNT 31). Death from cardiovascular causes was not significant. Subgroup analysis demonstrated that greatest benefit was among participants with LVEF 40-50%."
+      ],
+        pearls: "",
+        doi: "DOI: 10.1056/NEJMoa2107038",
+        link: "https://www.nejm.org/doi/full/10.1056/NEJMoa2107038",
+      },
 
-      // { name: "***", field: "cardiology", hints: [
-      //   "Background: ***",
-      //   "Population: ***",
-      //   "Primary outcome: ***",
-      //   "Secondary outcomes: ***"
-      // ]},
+      { name: "FIRE AND ICE", field: "cardiology", hints: [
+        "Background: This 2016 trial compared the use of balloon cryoablation vs radiofrequency ablation in pulmonary vein isolation.",
+        "Population: Patients with paroxysmal AF were randomized to RFA (N=376) or cryoablation (N=374).",
+        "Primary outcome: Treatment failure was equivalent in both RFA (35.9%) and cryoablation (34.6%) groups (p<0.001 noninferiority).",
+        "Secondary outcomes: Recurrent atrial arrhythmia, antiarrhythmic drug treatment, repeat ablation, rehospitalization for cardiac reason, and death were all comparable between groups. Procedure duration and left atrial dwell time were shorter in cryoablation. Fluorscopy time was shorter in RFA."
+      ],
+        pearls: "",
+        doi: "DOI: 10.1056/NEJMoa1602014",
+        link: "https://www.nejm.org/doi/full/10.1056/NEJMoa1602014",
+      },
 
+      { name: "HOPE", field: "cardiology", hints: [
+        "Background: Tested ACE inhibition for high-risk patients without heart failure; builds on smaller ACE inhibitor studies.",
+        "Population: High-risk adults without heart failure.",
+        "Primary outcome: Ramipril reduced cardiovascular death, MI, and stroke.",
+        "Secondary outcomes: Reduced new-onset diabetes; influenced subsequent cardiovascular trials."
+      ]},
+
+      { name: "PARTNER", field: "cardiology", hints: [
+        "Background: Examined TAVR in severe aortic stenosis patients at high surgical risk; builds on early TAVR feasibility studies.",
+        "Population: Severe aortic stenosis, high or prohibitive surgical risk.",
+        "Primary outcome: TAVR improved survival compared with medical therapy.",
+        "Secondary outcomes: More vascular complications; led to trials expanding TAVR to lower-risk populations."
+      ]},
+
+      { name: "SPRINT", field: "cardiology", hints: [
+        "Background: Investigated whether intensive BP lowering reduces cardiovascular events; builds on prior hypertension studies.",
+        "Population: Adults at high cardiovascular risk without diabetes or prior stroke.",
+        "Primary outcome: Intensive BP control reduced major cardiovascular events and all-cause mortality.",
+        "Secondary outcomes: Higher rates of hypotension and acute kidney injury; influenced later guideline targets."
+      ]},
+
+      { name: "V-HEFT", field: "cardiology", hints: [
+        "Background: In the early 1980s, vasodilators were commonly used in HFrEF, though the mortality benefit was unknown. This 1986 trial predated beta blocker and ACE-i, and studied the effect of isordil-hydral and prazosin compared to placebo.",
+        "Population: Adults with dilated cardiomyopathy with LVEF <45% were randomized to isordil-hydral (N=186), prazosin (N=183), or placebo (N=273).",
+        "Primary outcome: Mortality was 38.7% in isordil-hydral group vs 49.7% prazosin vs 44.0% placebo, which was not significant (p=0.093).",
+        "Secondary outcomes: Risk reduction for mortality by two years was 34% in the isordil-hydral group compared to placebo. Mortality in the prazosin group was similar to that in the placebo group. LVEF rose significantly at eight weeks and one year in the group treated with isordil-hydral compared to the other two groups. A subgroup analysis suggested a statistically significant mortality benefit in African American patients with isordil-hydral, motivating the later A-HeFT trial (2004).",
+        ],
+        pearls: "",
+        doi: "DOI: 10.1056/NEJM19860612314240",
+        link: "https://www.nejm.org/doi/pdf/10.1056/NEJM198606123142404",
+      },
 
       // Surgery Trials
 
@@ -249,7 +327,25 @@
       const container = document.getElementById("letters");
       container.innerHTML = "";
 
+      const letterCount = [...trial.name].filter(
+        c => c !== "-" && c !== " "
+      ).length;
+
+      // reset classes
+      container.classList.remove("compact", "ultracompact");
+
+      if (letterCount > 10) {
+        sizeMode = "ultracompact";
+        container.classList.add("ultracompact");
+      } else if (letterCount > 7) {
+        sizeMode = "compact";
+        container.classList.add("compact");
+      } else {
+        sizeMode = "normal";
+      }
+
       inputs = [];
+
 
       for (let i = 0; i < trial.name.length; i++) {
         const char = trial.name[i];
@@ -259,6 +355,12 @@
           dash.className = "hyphen";
           dash.textContent = "-";
           container.appendChild(dash);
+
+        } else if (char === " ") {
+          const space = document.createElement("span");
+          space.className = "space";
+          container.appendChild(space);
+
         } else {
           const input = document.createElement("input");
           input.className = "letter";
@@ -283,6 +385,7 @@
           inputs.push(input);
           container.appendChild(input);
         }
+
       }
 
       if (inputs.length) inputs[0].focus();
@@ -320,14 +423,26 @@
       const row = document.createElement("div");
       row.className = "row";
 
+      if (sizeMode !== "normal") {
+        row.classList.add(sizeMode);
+      }
+
       [...guess].forEach((letter, i) => {
-        if (letter === "-") {
-          const dash = document.createElement("span");
-          dash.className = "hyphen";
-          dash.textContent = "-";
-          row.appendChild(dash);
-          return;
-        }
+      if (letter === "-") {
+        const dash = document.createElement("span");
+        dash.className = "hyphen";
+        dash.textContent = "-";
+        row.appendChild(dash);
+        return;
+      }
+
+      if (letter === " ") {
+        const space = document.createElement("span");
+        space.className = "space";
+        row.appendChild(space);
+        return;
+      }
+
 
         const box = document.createElement("input");
         box.className = "letter";
