@@ -3,17 +3,19 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NEJM-le</title>
+  <title>journ.le</title>
   <style>
     body {
       font-family: "Courier New", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
       background: #f4f6f8;
       display: flex;
       justify-content: center;
-      align-items: center;
-      height: 100vh;
+      align-items: flex-start;
+      min-height: 100vh;
       margin: 0;
+      padding-top: 2rem;
     }
+
     .game {
       background: white;
       padding: 2rem;
@@ -46,6 +48,28 @@
     }
 
     .field-btn.active {
+      background: #4f46e5;
+      color: white;
+    }
+
+    .mode-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .mode-btn {
+      padding: 0.4rem 0.8rem;
+      border: 1px solid #4f46e5;
+      border-radius: 6px;
+      background: white;
+      color: #4f46e5;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .mode-btn.active {
       background: #4f46e5;
       color: white;
     }
@@ -129,8 +153,8 @@
 
     /* Ultra-compact mode (≥10 letters) */
     .ultracompact input.letter {
-      width: 16px;
-      height: 16px;
+      width: 14px;
+      height: 14px;
       font-size: 0.5rem;
     }
 
@@ -147,11 +171,18 @@
   </style>
 </head>
 <body>
-  <div class="game">
-    <h1> journ.le</h1>
-    <p>Guess the name of a seminal randomized controlled trial.</p>
 
-    <div class="field-buttons">
+  <div class="game">
+    <div class="mode-buttons">
+      <button class="mode-btn active" data-mode="daily">Daily</button>
+      <button class="mode-btn" data-mode="archive">Archive</button>
+    </div>
+
+    <h1> 📚 journ.le</h1>
+        <div id="streakDisplay">🔥 Streak: 0 | Best: 0</div>
+    <p>Guess the name of an influential randomized controlled trial.</p>
+
+    <div id="fieldButtonContainer" class="field-buttons">
       <button class="field-btn active" data-field="all">All</button>
       <button class="field-btn" data-field="cardiology">Cardiology</button>
       <button class="field-btn" data-field="internal">Internal Medicine</button>
@@ -175,16 +206,540 @@
   </div>
 
   <script>
-    
+    // ****************
+    // GLOBAL VARIABLES
+    // ****************
+
     // this is a state variable that can be toggled depending on length of trial name
     let sizeMode = "normal"; // "normal" | "compact" | "ultracompact"
 
+    // load streak information
+    let currentStreak = Number(localStorage.getItem("currentStreak")) || 0;
+    let bestStreak = Number(localStorage.getItem("bestStreak")) || 0;
+
+    let trial;
+    let attempts;
+    let inputs;
+    let shownHints;
+    let currentField = 'all';
+
+    let gameMode = "daily"; // "daily" | "archive"
+
+    // instantiate some variables
+    const MAX_ATTEMPTS = 6;
+    const DAILY_KEY = "dailyCompletedDate";
     const trials = [
 
-    // this is where new trials go
+    // **************
+    // TRIALS ARE SAVED HERE
+    // **************
 
       // trial template
-      // { name: "***", field: "cardiology", hints: [
+      // { name: "", field: "",
+      // hints: [
+      //   "Background: ",
+      //   "Population: ",
+      //   "Primary outcome: ",
+      //   "Secondary outcomes: "
+      // ],
+      //   pearls: "",
+      //   doi: "",
+      //   link: ""
+      // },
+
+    // Cardiology Trials
+
+      { name: "AATAC", field: "cardiology", releaseDate: "2026-01-31",
+      hints: [
+        "Background: AFFIRM (2002) and AF-CHF (2008) showed similar outcomes for pharmacologic rate and rhythm control strategies in AF. This 2016 trial compared ablation and amiodarone for treatment of persistent AF in patients with reduced EF.",
+        "Population: Patients with persistent AF, dc-ICD or CRT-D with NYHA II-III symptoms and LVEF ≤ 40% were randomized to catheter ablation (N=102) or amiodarone (N=101).",
+        "Primary outcome: AF-free survival at 24 months was 70% in the ablation group vs 34% in the amiodarone group (p<0.001).",
+        "Secondary outcomes: ablation reduced risk of unplanned hospitalization (RR 0.55) and death (0.44). Ablation also improved LVEF (+8% vs 4% in amio group), 6-minute walk distance (+22 vs +10 in amio group), and MLHFQ score (+11 vs +6 in amio group)."
+      ],
+        pearls: "Patients with AF and CHF are disproporionately committed to rhythm control due to an inability to tolerate rate AV-nodal blockade and negative inotropy. As amiodarone (used in AF-CHF) has a sizeable side-effect profile, the advent of catheter ablation for rhythm control was thought to ",
+        doi: "doi: 10.1161/CIRCULATIONAHA.115.019406",
+        link: "https://www.ahajournals.org/doi/10.1161/CIRCULATIONAHA.115.019406"
+      },
+
+      { name: "A-HEFT", field: "cardiology", releaseDate: "2026-02-01",
+      hints: [
+        "Background: A subgroup analysis of the V-HeFT trial (1986) suggested a survival benefit for isordil-hydral for self-identified African American patients.",
+         "Population: Self-identified African American patients with NYHA III-IV HFrEF with EF <35% were randomized to ISDN-hydral (N=518) or placebo (N=532).",
+         "Primary outcome: Composite score of death, first hospitalization for heart failure, and change in quality of life favored isordil-hydral.",
+         "Secondary outcomes: All-cause mortality was 6.2% vs 10.2% (RR 0.61) favoring isordil-hydral over placebo (NNT=25). ISDN-hydral also resulted in reduced HF hospitalization and improved quality of life at 6 months."
+      ], 
+        pearls: "Headache and dizziness were more common in intervention group. A-HeFT was published in 2004.",
+        doi: "DOI: 10.1056/NEJMoa042934",
+        link: "https://www.nejm.org/doi/full/10.1056/NEJMoa042934"
+      },
+
+      { name: "BLOCK-AF", field: "cardiology", releaseDate: "2026-01-29",
+      hints: [
+         "Background: The MADIT-CRT trial demonstrated that among patients with HF and LVEF ≤ 30% and QRS duration ≥130ms, placement of an ICD w/ CRT reduced mortality or HF events when compared to ICD placement alone (HR 0.66). However, the role of CRT in patients with high degree SA or AV block with mildly reduced EF was not well understood.",
+         "Population: Patients with high-degree SA or AV nodal dysfunction and LVEF <50% with NHYA class I-III symptoms were randomized to biventricular pacing (N=349) or RV pacing (N=342).",
+         "Primary outcome: CRT resulted in a 10% absolute risk reduction in death, urgent care visit for heart failure requiring IV diuretics, or 15% increase in LVESVi compared to patients undergoing RV pacing (HR 0.74).",
+         "Secondary outcomes: CRT reduced risk of death or urgent care visit (HR 0.73), death or hospitalization for heart failure (HR 0.78), death (HR 0.83), and hospitalization for heart failure (HR 0.70)."
+       ],
+        pearls: "Left ventricular lead-related complications occurred in 6.4% of patients.",
+        doi: "DOI: 10.1056/NEJMoa1210356",
+        link: "https://www.nejm.org/doi/full/10.1056/NEJMoa1210356"
+        },
+
+      { name: "CIBIS", field: "cardiology", releaseDate: "2026-01-20",
+      hints: [
+        "Background: Several small trials in the 1980s and 1990s demonstrated that beta blockers (BBs) improved cardiac function and associated heart failure (HF) symptoms in patients with reduced ejection fraction (HFrEF). This 1994 trial re-demonstrated the role of BBs in improving HF symptoms, but failed to prove mortality benefit in patients with HFrEF.",
+        "Population: Patients with NYHA class III-IV HFrEF with LVEF < 40% were randomized to receive bisoprolol (N=320) or placebo (N=321).",
+        "Primary outcome: Bisoprolol failed to demonstrate a mortality benefit.",
+        "Secondary outcomes: Bisoprolol was associated in significant improvement to functional status of patients, resulting in fewer hospitalizations for cardiac decompensation."
+      ],
+        pearls: "Follow-up studies, including CIBIS-II demonstrated a mortality benefit for bisoprolol, and other beta blockers.",
+        doi: "DOI: 10.1161/01.cir.90.4.1765",
+        link: "https://www.ahajournals.org/doi/epdf/10.1161/01.CIR.90.4.1765"
+      },
+
+      { name: "CIBIS-II", field: "cardiology", releaseDate: "2026-01-25",
+      hints: [
+        "Background: This 1999 trial expanded the drug classes available to patients with heart failure with reduced ejection fraction (HFrEF) by proving a mortality benefit to bisoprolol. Prior to this trial, only vasodilators (V-HeFT) and ACE-inhibitors (SOLVD) were known to provide a mortality benefit in this population.",
+        "Population: Patients with HFrEF (EF≤35%) across eastern and western Europe were randomized to bisoprolol (N=1327) or placebo (N=1320).",
+        "Primary outcome: All-cause mortality was 12% in the bisoprolol group compared to 17% in the placebo group (HR 0.66).",
+        "Secondary outcomes: Hospital admission and cardiovascular death, were both less likely to occur for any reason in the bisoprolol group (HRs 0.80 and 0.71, respectively), "
+      ],
+        pearls: "Prior to this trial, it was unclear whether BB therapy was beneficial or detrimental in patients with HFrEF. Post-Hoc analysis demonstrated significantly reduced risk of hospitalization for heart failure and sudden death in the BB group, suggesting BBs role in reducing unfavorable cardiac remodeling and suppression of ventricular tachycardia.",
+        doi: "DOI: 10.1016/S0140-6736(98)11181-9",
+        link: "https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(98)11181-9/abstract"
+      },
+
+      { name: "COURAGE", field: "cardiology", releaseDate: "2026-01-16",
+      hints: [
+        "Background: Evaluated PCI plus medical therapy versus medical therapy alone for stable ischemic heart disease; informed by earlier revascularization studies.",
+        "Population: Patients with stable ischemic heart disease.",
+        "Primary outcome: No reduction in death or myocardial infarction with PCI plus medical therapy compared to medical therapy alone.",
+        "Secondary outcomes: Improved angina control; findings shaped later trials like ISCHEMIA and ORBITA.",
+      ],
+        pearls: "",
+        doi: "DOI: 10.1056/NEJMoa070829",
+        link: "https://www.nejm.org/doi/full/10.1056/NEJMoa070829"
+      },
+
+      // { name: "CONSENSUS", field: "cardiology",
+      // hints: [
+      //   "Background: ***",
+      //   "Population: ***",
+      //   "Primary outcome: ***",
+      //   "Secondary outcomes: ***"
+      // ],
+      //   pearls: "",
+      //   doi: "",
+      //   link: ""
+      // },
+
+      // { name: "COMET", field: "cardiology",
+      // hints: [
+      //   "Background: ***",
+      //   "Population: ***",
+      //   "Primary outcome: ***",
+      //   "Secondary outcomes: ***"
+      // ],
+      //   pearls: "",
+      //   doi: "",
+      //   link: ""
+      // },
+
+      // { name: "COPERNICUS", field: "cardiology",
+      // hints: [
+      //   "Background: ***",
+      //   "Population: ***",
+      //   "Primary outcome: ***",
+      //   "Secondary outcomes: ***"
+      // ],
+      //   pearls: "",
+      //   doi: "",
+      //   link: ""
+      // },
+
+      { name: "EMPEROR-PRESERVED", field: "cardiology", releaseDate: "2026-01-18",
+      hints: [
+        "Background: The EMPA-REG OUTCOME (2015) and CANVAS (2017) trials demonstrated improved CKD and CVD outcomes in patients with diabetes. The EMPEROR-Reduced (2020) trial reduced HF exacerbations in HFrEF population. This 2021 trial sought to clarify the role of SGLT2i in HFpEF.",
+        "Population: Patients with LVEF>40% were randomized to empagliflozin (N=2997) or standard therapy (N=2991).",
+        "Primary outcome: Death from cardiovascular etiology or HF hospitalization was reduced in the empagliflozin group (HR 0.79) with NNT of 30.",
+        "Secondary outcomes: HF hospitalizations were reduced in empagliflozin group (HR 0.71 with NNT 31). Death from cardiovascular causes was not significant. Subgroup analysis demonstrated that greatest benefit was among participants with LVEF 40-50%."
+      ],
+        pearls: "",
+        doi: "DOI: 10.1056/NEJMoa2107038",
+        link: "https://www.nejm.org/doi/full/10.1056/NEJMoa2107038"
+      },
+
+      { name: "FIRE AND ICE", field: "cardiology", releaseDate: "2026-01-13",
+      hints: [
+        "Background: This 2016 trial compared the use of balloon cryoablation vs radiofrequency ablation in pulmonary vein isolation.",
+        "Population: Patients with paroxysmal AF were randomized to RFA (N=376) or cryoablation (N=374).",
+        "Primary outcome: Treatment failure was equivalent in both RFA (35.9%) and cryoablation (34.6%) groups (p<0.001 noninferiority).",
+        "Secondary outcomes: Recurrent atrial arrhythmia, antiarrhythmic drug treatment, repeat ablation, rehospitalization for cardiac reason, and death were all comparable between groups. Procedure duration and left atrial dwell time were shorter in cryoablation. Fluorscopy time was shorter in RFA."
+      ],
+        pearls: "",
+        doi: "DOI: 10.1056/NEJMoa1602014",
+        link: "https://www.nejm.org/doi/full/10.1056/NEJMoa1602014"
+      },
+
+      { name: "HOPE", field: "cardiology", releaseDate: "2026-01-26",
+      hints: [
+        "Background: Tested ACE inhibition for high-risk patients without heart failure; builds on smaller ACE inhibitor studies.",
+        "Population: High-risk adults without heart failure.",
+        "Primary outcome: Ramipril reduced cardiovascular death, MI, and stroke.",
+        "Secondary outcomes: Reduced new-onset diabetes; influenced subsequent cardiovascular trials."
+      ],
+        pearls: "",
+        doi: "DOI: 10.1056/NEJM200001203420301",
+        link: "https://www.nejm.org/doi/full/10.1056/NEJM200001203420301"
+      },
+
+      // { name: "MERIT-HF", field: "cardiology", hints: [
+      //   "Background: ***",
+      //   "Population: ***",
+      //   "Primary outcome: ***",
+      //   "Secondary outcomes: ***"
+      // ],
+      //   pearls: "",
+      //   doi: "",
+      //   link: ""
+      // },
+
+      { name: "PARTNER A", field: "cardiology", releaseDate: "2026-01-28",
+      hints: [
+        "Background: Examined TAVR in severe aortic stenosis patients at high surgical risk; builds on early TAVR feasibility studies.",
+        "Population: Severe aortic stenosis, high or prohibitive surgical risk.",
+        "Primary outcome: TAVR improved survival compared with medical therapy.",
+        "Secondary outcomes: More vascular complications; led to trials expanding TAVR to lower-risk populations."
+      ],
+        pearls: "",
+        doi: "DOI: 10.1056/NEJMoa1103510",
+        link: "https://www.nejm.org/doi/full/10.1056/NEJMoa1103510"
+      },
+
+      { name: "SPRINT", field: "cardiology", releaseDate: "2026-02-02",
+      hints: [
+        "Background: Investigated whether intensive BP lowering reduces cardiovascular events; builds on prior hypertension studies.",
+        "Population: Adults at high cardiovascular risk without diabetes or prior stroke.",
+        "Primary outcome: Intensive BP control reduced major cardiovascular events and all-cause mortality.",
+        "Secondary outcomes: Higher rates of hypotension and acute kidney injury; influenced later guideline targets."
+      ],
+        pearls: "",
+        doi: "DOI: 10.1056/NEJMoa1511939",
+        link: "https://www.nejm.org/doi/full/10.1056/NEJMoa1511939"
+      },
+
+      // { name: "SOLVD", field: "cardiology",
+      // hints: [
+      //   "Background: ***",
+      //   "Population: ***",
+      //   "Primary outcome: ***",
+      //   "Secondary outcomes: ***"
+      // ],
+      //   pearls: "",
+      //   doi: "",
+      //   link: ""
+      // },
+
+      { name: "V-HEFT", field: "cardiology", releaseDate: "2026-01-21",
+       hints: [
+        "Background: In the early 1980s, vasodilators were commonly used in HFrEF, though the mortality benefit was unknown. This 1986 trial predated beta blocker and ACE-i, and studied the effect of isordil-hydral and prazosin compared to placebo.",
+        "Population: Adults with dilated cardiomyopathy with LVEF <45% were randomized to isordil-hydral (N=186), prazosin (N=183), or placebo (N=273).",
+        "Primary outcome: Mortality was 38.7% in isordil-hydral group vs 49.7% prazosin vs 44.0% placebo, which was not significant (p=0.093).",
+        "Secondary outcomes: Risk reduction for mortality by two years was 34% in the isordil-hydral group compared to placebo. Mortality in the prazosin group was similar to that in the placebo group. LVEF rose significantly at eight weeks and one year in the group treated with isordil-hydral compared to the other two groups. A subgroup analysis suggested a statistically significant mortality benefit in African American patients with isordil-hydral, motivating the later A-HeFT trial (2004).",
+        ],
+          pearls: "",
+          doi: "DOI: 10.1056/NEJM19860612314240",
+          link: "https://www.nejm.org/doi/pdf/10.1056/NEJM198606123142404"
+        },
+
+      // Surgery Trials
+
+      { name: "FOCUS", field: "surgery", releaseDate: "2026-01-12",
+      hints: [
+        "Background: Studied restrictive versus liberal transfusion strategies in hip fracture surgery; builds on prior perioperative transfusion research.",
+        "Population: Elderly patients undergoing hip fracture surgery.",
+        "Primary outcome: Restrictive transfusion strategy was noninferior for functional recovery.",
+        "Secondary outcomes: No difference in mortality; influenced later perioperative transfusion guidelines."
+      ],
+        pearls: "",
+        doi: "DOI: 10.1056/NEJMoa1012452",
+        link: "https://www.nejm.org/doi/full/10.1056/NEJMoa1012452"
+      },
+
+      // Internal Medicine Trials
+
+      { name: "RECOVERY", field: "internal", releaseDate: "2026-01-27",
+      hints: [
+        "Background: Investigated repurposed drugs for COVID-19, building on early pandemic antiviral trials.",
+        "Population: Hospitalized COVID-19 patients across UK NHS hospitals.",
+        "Primary outcome: Dexamethasone reduced 28-day mortality.",
+        "Secondary outcomes: No benefit in patients not requiring oxygen; informed multiple subsequent COVID-19 trials."
+      ],
+        pearls: "",
+        doi: "DOI: 10.1056/NEJMoa2021436",
+        link: "https://www.nejm.org/doi/10.1056/NEJMoa2021436"
+      },
+
+      { name: "ACCORD", field: "internal", releaseDate: "2026-01-17",
+      hints: [
+        "Background: Tested intensive glucose lowering in type 2 diabetes; built on UKPDS findings.",
+        "Population: Adults with type 2 diabetes and high cardiovascular risk.",
+        "Primary outcome: Intensive glycemic control increased all-cause mortality.",
+        "Secondary outcomes: Reduced nonfatal MI; influenced subsequent glycemic target recommendations."
+      ],
+        pearls: "",
+        doi: "DOI: 10.1056/NEJMoa080274",
+        link: "https://www.nejm.org/doi/full/10.1056/NEJMoa0802743"
+      },
+
+      // Pulmonary Critical Care Trials
+
+      // { name: "3SITES", field: "",
+      // hints: [
+      //   "Background: ",
+      //   "Population: ",
+      //   "Primary outcome: ",
+      //   "Secondary outcomes: "
+      // ],
+      //   pearls: "",
+      //   doi: "",
+      //   link: ""
+      // },
+
+      // { name: "ANDROMEDA", field: "",
+      // hints: [
+      //   "Background: ",
+      //   "Population: ",
+      //   "Primary outcome: ",
+      //   "Secondary outcomes: "
+      // ],
+      //   pearls: "",
+      //   doi: "",
+      //   link: ""
+      // },
+
+      { name: "APROCCHSS", field: "crit", releaseDate: "2026-01-23",
+      hints: [
+        "Background: Mixed data suggested mortality benefit for stress dose steroids in septic shock with Annane Trial (2002) supporting, and CORTICUS (2008), HYPRESS (2016), and ADRENAL (2018) not supporting. This 2018 trial studied the role of hydrocortisone and fludrocortisone in patients with septic shock.",
+        "Population: Patients across 34 centers in France with septic shock were randomized to receive hydrocortisone 50mg IV Q6H and fludrocortisone 50mcg (N=614) or placebo (N=627) for seven days.",
+        "Primary outcome: All-cause mortality at 90 days was lower in the stress-dose steroids (SDS) group (RR 0.88).",
+        "Secondary outcomes: Vasorpressor-free and organ-failure free days at 28 days was also lower in the SDS group. There was also a trend toward lower ventilator-free days in the SDS group. Hyperglycemia by day seven was more frequent in the SDS group."
+      ],
+        pearls: "To get a sense for how sick this patient population was, at 180 days, the mortality rate in the SDS group was 47% (vs 53% in the control group). The most frequently used pressor was norepinepherine, which was dosed at 1.08±1.63 µg/kg/min in this trial.",
+        doi: "DOI: 10.1056/NEJMoa1705716",
+        link: "https://www.nejm.org/doi/full/10.1056/NEJMoa1705716"
+      },
+
+      { name: "ARDSNET", field: "crit", releaseDate: "2026-01-24",
+      hints: [
+        "Background: Mechanical ventilation traditionally targeted tidal volumes (TVs) of 10-15cc/kg. Animal data suggesting the role of lower TVs in reducing risk of barotrauma motivated this 2000 trial.",
+        "Population: Across ten university hospitals in the United States, patients were randomized to 6cc/kg ideal body weight (IBW) TV and plateau pressure ≤30cmH2O (N=432) or traditional 12cc/kg TV and plateau pressure ≤50cmH2O (N=429).",
+        "Primary outcome: 180-day mortality, ventilator-free days, and breathing without assistance by day 28 were all lower in the low TV group compared to control (RR 0.78, 12 vs 10, and 66% vs 55%, respectively).",
+        "Secondary outcomes: Patients in the lung protective ventilation group had greater days without non-pulmonary organ failure, circulatory failure, coagulation failure, and renal failure. "
+      ],
+        pearls: "The Surviving Sepsis campaign recommends 6 cc/kg of IBW in ARDS resulting from sepsis as a result of this trial. One criticism of the ARDSNet trial is that TVs in the traditional group were excessively high.",
+        doi: "DOI: 10.1056/NEJM200005043421801",
+        link: "https://www.nejm.org/doi/full/10.1056/NEJM200005043421801"
+      },
+
+      // { name: "ACURASYS", field: "",
+      // hints: [
+      //   "Background: ",
+      //   "Population: ",
+      //   "Primary outcome: ",
+      //   "Secondary outcomes: "
+      // ],
+      //   pearls: "",
+      //   doi: "",
+      //   link: ""
+      // },
+
+
+      // { name: "BICAR-ICU", field: "",
+      // hints: [
+      //   "Background: ",
+      //   "Population: ",
+      //   "Primary outcome: ",
+      //   "Secondary outcomes: "
+      // ],
+      //   pearls: "",
+      //   doi: "",
+      //   link: ""
+      // },
+
+      // { name: "BICAR-ICU 2", field: "",
+      // hints: [
+      //   "Background: ",
+      //   "Population: ",
+      //   "Primary outcome: ",
+      //   "Secondary outcomes: "
+      // ],
+      //   pearls: "",
+      //   doi: "",
+      //   link: ""
+      // },
+
+      { name: "CAPE COD", field: "crit", releaseDate: "2026-01-22",
+      hints: [
+        "Background: This 2023 trial studied the role of corticosteroids in patients with severe community acquired pneumonia (CAP), and built on previous studies which suggested improved time to symptom resolution (Cochrane review, 2011).",
+        "Population: Across 31 centers in France, 1200 participants with severe CAP (one of following: (1) Fine class V/pneumonia severity index >130, (2) receiving PEEP ≥5cm H2O, (3) on high flow (HFNC) ≥50% and PaO2:FiO2 < 300, (3) or on non-rebreather (NRB)) were randomized to receive either continuous hydrocortisone 200mg daily for four or seven days (N=400) or placebo (N=395).",
+        "Primary outcome: All cause mortality at 28 days was 6.2% in the hydrocortisone arm, vs 14.7% in the placebo arm (RR 0.63, NNT 18.5).",
+        "Secondary outcomes: All cause mortality at 90 days was lower in the hydrocortisone group (NNT 18.5). Endotracheal intubation was also less likely in the treatment group (HRs 0.59 and 0.69 considering patients not requiring any form of mechanical ventilation and patients not requiring endotracehal intubation at enrollment, respectively). Finally, vasopressor use for patients not receiving vasopressors at enrollment was lower in the steroid group (HR 0.59). Adverse outcomes: the frequency of nosocomial infections and gastrointestinal bleeding was comparable for both groups. The steroid group required higher daily doses of insulin."
+      ],
+        pearls: "A similar trial that came out at the same time called ESCAPe examined the use of methylprednisolone 40mg daily in veterans with severe CAP, but was underpowered to demonstrate a mortality benefit. A follow-up meta-analysis published in the Journal of General Internal Medicine in 2023 by Pitre, et al. demonstrated a likely mortality benefit of steroids in severe CAP. This study included both the CAPE COD trial and ESCAPe trials.",
+        doi: "DOI: 10.1056/NEJMoa2215145",
+        link: "https://www.nejm.org/doi/full/10.1056/NEJMoa2215145"
+      },
+
+
+      // { name: "CESAR", field: "",
+      // hints: [
+      //   "Background: ",
+      //   "Population: ",
+      //   "Primary outcome: ",
+      //   "Secondary outcomes: "
+      // ],
+      //   pearls: "",
+      //   doi: "",
+      //   link: ""
+      // },
+
+      { name: "DEXA-ARDS", field: "crit", releaseDate: "2026-01-15",
+      hints: [
+        "Background: A meta-analysis of nine small randomized trials suggested the role of corticosteroids in reducing inflammation, improving gas exchange, and reducing the duration of mechanical ventilation and ICU stay in patients with ARDS (Annane, et al 2017, Guidelines from SCCM & ESICM). This 2020 trial was the first to demonstrate a benefit with dexamethasone in patients with ARDS.",
+        "Population:  277 patients with ARDS across 17 hospitals in Spain were randomized to receive dexamethasone 20mg daily for five days, followed by 10mg daily for five days (N=139) or placebo (138).",
+        "Primary outcome: Ventilator-free days at 28 days was 4.8 days greater in the dexamethasone group (p<0.0001).",
+        "Secondary outcomes: All cause mortality 60 days after randomization was 21% in the dexamethasone group, compared to 36% in the control group (RR 0.58). Hyperglycemia, new infections, and barotrauma were al similar between groups, but common adverse events."
+      ],
+        pearls: "Early therapy with dexamethasone in ARDS is likely to reduce mortality in moderate-to-severe ARDS.",
+        doi: "DOI: 10.1016/S2213-2600(19)30417-5",
+        link: "https://www.thelancet.com/journals/lanres/article/PIIS2213-2600(19)30417-5/abstract"
+      },
+
+      // { name: "FACTT", field: "",
+      // hints: [
+      //   "Background: ",
+      //   "Population: ",
+      //   "Primary outcome: ",
+      //   "Secondary outcomes: "
+      // ],
+      //   pearls: "",
+      //   doi: "",
+      //   link: ""
+      // },
+
+      // { name: "EOLIA", field: "",
+      // hints: [
+      //   "Background: ",
+      //   "Population: ",
+      //   "Primary outcome: ",
+      //   "Secondary outcomes: "
+      // ],
+      //   pearls: "",
+      //   doi: "",
+      //   link: ""
+      // },
+
+      // { name: "FACTT", field: "",
+      // hints: [
+      //   "Background: ",
+      //   "Population: ",
+      //   "Primary outcome: ",
+      //   "Secondary outcomes: "
+      // ],
+      //   pearls: "",
+      //   doi: "",
+      //   link: ""
+      // },
+
+      // { name: "PROSEVA", field: "",
+      // hints: [
+      //   "Background: ",
+      //   "Population: ",
+      //   "Primary outcome: ",
+      //   "Secondary outcomes: "
+      // ],
+      //   pearls: "",
+      //   doi: "",
+      //   link: ""
+      // },
+
+      // { name: "ROSE", field: "",
+      // hints: [
+      //   "Background: ",
+      //   "Population: ",
+      //   "Primary outcome: ",
+      //   "Secondary outcomes: "
+      // ],
+      //   pearls: "",
+      //   doi: "",
+      //   link: ""
+      // },
+
+      // { name: "TRICC", field: "",
+      // hints: [
+      //   "Background: ",
+      //   "Population: ",
+      //   "Primary outcome: ",
+      //   "Secondary outcomes: "
+      // ],
+      //   pearls: "",
+      //   doi: "",
+      //   link: ""
+      // },
+
+      // { name: "TTM", field: "",
+      // hints: [
+      //   "Background: ",
+      //   "Population: ",
+      //   "Primary outcome: ",
+      //   "Secondary outcomes: "
+      // ],
+      //   pearls: "",
+      //   doi: "",
+      //   link: ""
+      // },
+
+      // { name: "TTM 2", field: "",
+      // hints: [
+      //   "Background: ",
+      //   "Population: ",
+      //   "Primary outcome: ",
+      //   "Secondary outcomes: "
+      // ],
+      //   pearls: "",
+      //   doi: "",
+      //   link: ""
+      // },
+
+      // { name: "VAST", field: "",
+      // hints: [
+      //   "Background: ",
+      //   "Population: ",
+      //   "Primary outcome: ",
+      //   "Secondary outcomes: "
+      // ],
+      //   pearls: "",
+      //   doi: "",
+      //   link: ""
+      // },
+
+      // Neurology Trials
+
+      { name: "CHANCE", field: "neurology", releaseDate: "2026-01-14",
+      hints: [
+        "Background: Antiplatelet therapy with ASA has  been known to be of modest benefit in secondary prevention of stroke. This 2013 trial examined the role of DAPT with ASA and plavix in patients following minor stroke or TIA.",
+        "Population: Patients with high-risk TIA or minor stroke were randomized to ASA (N=2586) or ASA & clopidogrel (N=2584) for 90 days.",
+        "Primary outcome: Stroke occurred less frequently in the DAPT group (HR 0.68, NNT=29).",
+        "Secondary outcomes: Ischemic stroke was reduced in the DAPT group. Hemorrhagic stroke, MI, CV mortality, all-cause mortality, and TIA were equivalent between groups."
+      ],
+        pearls: "Bleeding rates trended to significantly higher in the DAPT group (though was not stastistically significant).",
+        doi: "DOI: 10.1056/NEJMoa1215340",
+        link: "https://www.nejm.org/doi/full/10.1056/NEJMoa1215340"
+      }
+
+      // { name: "POINT", field: "neurology", releaseDate: "2026-01-30",
+      // hints: [
       //   "Background: ***",
       //   "Population: ***",
       //   "Primary outcome: ***",
@@ -195,125 +750,21 @@
       //   link: "",
       // },
 
-    // Cardiology Trials
+      // { name: "WATCHMAN", field: "neurology", releaseDate: "2026-01-19",
+      // hints: [
+      //   "Background: ***",
+      //   "Population: ***",
+      //   "Primary outcome: ***",
+      //   "Secondary outcomes: ***"
+      // ],
+      //   pearls: "",
+      //   doi: "",
+      //   link: "",
+      // }
 
-      { name: "AATAC", field: "cardiology", hints: [
-        "Background: AFFIRM (2002) and AF-CHF (2008) showed similar outcomes for pharmacologic rate and rhythm control strategies in AF. This 2016 trial compared ablation and amiodarone for treatment of persistent AF in patients with reduced EF.",
-        "Population: Patients with persistent AF, dc-ICD or CRT-D with NYHA II-III symptoms and LVEF ≤ 40% were randomized to catheter ablation (N=102) or amiodarone (N=101).",
-        "Primary outcome: AF-free survival at 24 months was 70% in the ablation group vs 34% in the amiodarone group (p<0.001).",
-        "Secondary outcomes: ablation reduced risk of unplanned hospitalization (RR 0.55) and death (0.44). Ablation also improved LVEF (+8% vs 4% in amio group), 6-minute walk distance (+22 vs +10 in amio group), and MLHFQ score (+11 vs +6 in amio group)."
-      ],
-        pearls: "Patients with AF and CHF are disproporionately committed to rhythm control due to an inability to tolerate rate AV-nodal blockade and negative inotropy. As amiodarone (used in AF-CHF) has a sizeable side-effect profile, the advent of catheter ablation for rhythm control was thought to "},
-
-      { name: "A-HEFT", field: "cardiology", hints: [
-        "Background: A subgroup analysis of the V-HeFT trial (1986) suggested a survival benefit for isordil-hydral for self-identified African American patients.",
-         "Population: Self-identified African American patients with NYHA III-IV HFrEF with EF <35% were randomized to ISDN-hydral (N=518) or placebo (N=532).",
-         "Primary outcome: Composite score of death, first hospitalization for heart failure, and change in quality of life favored isordil-hydral.",
-         "Secondary outcomes: All-cause mortality was 6.2% vs 10.2% (RR 0.61) favoring isordil-hydral over placebo (NNT=25). ISDN-hydral also resulted in reduced HF hospitalization and improved quality of life at 6 months."
-      ], 
-         pearls: "Headache and dizziness were more common in intervention group. A-HeFT was published in 2004." },
-
-      { name: "BLOCK-AF", field: "cardiology", hints: [
-         "Background: The MADIT-CRT trial demonstrated that among patients with HF and LVEF ≤ 30% and QRS duration ≥130ms, placement of an ICD w/ CRT reduced mortality or HF events when compared to ICD placement alone (HR 0.66). However, the role of CRT in patients with high degree SA or AV block with mildly reduced EF was not well understood.",
-         "Population: Patients with high-degree SA or AV nodal dysfunction and LVEF <50% with NHYA class I-III symptoms were randomized to biventricular pacing (N=349) or RV pacing (N=342).",
-         "Primary outcome: CRT resulted in a 10% absolute risk reduction in death, urgent care visit for heart failure requiring IV diuretics, or 15% increase in LVESVi compared to patients undergoing RV pacing (HR 0.74).",
-         "Secondary outcomes: CRT reduced risk of death or urgent care visit (HR 0.73), death or hospitalization for heart failure (HR 0.78), death (HR 0.83), and hospitalization for heart failure (HR 0.70)."
-       ],
-          pearls: "Left ventricular lead-related complications occurred in 6.4% of patients."
-        },
-
-      { name: "COURAGE", field: "cardiology", hints: [
-        "Background: Evaluated PCI plus medical therapy versus medical therapy alone for stable ischemic heart disease; informed by earlier revascularization studies.",
-        "Population: Patients with stable ischemic heart disease.",
-        "Primary outcome: No reduction in death or myocardial infarction with PCI plus medical therapy compared to medical therapy alone.",
-        "Secondary outcomes: Improved angina control; findings shaped later trials like ISCHEMIA and ORBITA."
-      ]},
-
-      { name: "EMPEROR-PRESERVED", field: "cardiology", hints: [
-        "Background: The EMPA-REG OUTCOME (2015) and CANVAS (2017) trials demonstrated improved CKD and CVD outcomes in patients with diabetes. The EMPEROR-Reduced (2020) trial reduced HF exacerbations in HFrEF population. This 2021 trial sought to clarify the role of SGLT2i in HFpEF.",
-        "Population: Patients with LVEF>40% were randomized to empagliflozin (N=2997) or standard therapy (N=2991).",
-        "Primary outcome: Death from cardiovascular etiology or HF hospitalization was reduced in the empagliflozin group (HR 0.79) with NNT of 30.",
-        "Secondary outcomes: HF hospitalizations were reduced in empagliflozin group (HR 0.71 with NNT 31). Death from cardiovascular causes was not significant. Subgroup analysis demonstrated that greatest benefit was among participants with LVEF 40-50%."
-      ],
-        pearls: "",
-        doi: "DOI: 10.1056/NEJMoa2107038",
-        link: "https://www.nejm.org/doi/full/10.1056/NEJMoa2107038",
-      },
-
-      { name: "FIRE AND ICE", field: "cardiology", hints: [
-        "Background: This 2016 trial compared the use of balloon cryoablation vs radiofrequency ablation in pulmonary vein isolation.",
-        "Population: Patients with paroxysmal AF were randomized to RFA (N=376) or cryoablation (N=374).",
-        "Primary outcome: Treatment failure was equivalent in both RFA (35.9%) and cryoablation (34.6%) groups (p<0.001 noninferiority).",
-        "Secondary outcomes: Recurrent atrial arrhythmia, antiarrhythmic drug treatment, repeat ablation, rehospitalization for cardiac reason, and death were all comparable between groups. Procedure duration and left atrial dwell time were shorter in cryoablation. Fluorscopy time was shorter in RFA."
-      ],
-        pearls: "",
-        doi: "DOI: 10.1056/NEJMoa1602014",
-        link: "https://www.nejm.org/doi/full/10.1056/NEJMoa1602014",
-      },
-
-      { name: "HOPE", field: "cardiology", hints: [
-        "Background: Tested ACE inhibition for high-risk patients without heart failure; builds on smaller ACE inhibitor studies.",
-        "Population: High-risk adults without heart failure.",
-        "Primary outcome: Ramipril reduced cardiovascular death, MI, and stroke.",
-        "Secondary outcomes: Reduced new-onset diabetes; influenced subsequent cardiovascular trials."
-      ]},
-
-      { name: "PARTNER", field: "cardiology", hints: [
-        "Background: Examined TAVR in severe aortic stenosis patients at high surgical risk; builds on early TAVR feasibility studies.",
-        "Population: Severe aortic stenosis, high or prohibitive surgical risk.",
-        "Primary outcome: TAVR improved survival compared with medical therapy.",
-        "Secondary outcomes: More vascular complications; led to trials expanding TAVR to lower-risk populations."
-      ]},
-
-      { name: "SPRINT", field: "cardiology", hints: [
-        "Background: Investigated whether intensive BP lowering reduces cardiovascular events; builds on prior hypertension studies.",
-        "Population: Adults at high cardiovascular risk without diabetes or prior stroke.",
-        "Primary outcome: Intensive BP control reduced major cardiovascular events and all-cause mortality.",
-        "Secondary outcomes: Higher rates of hypotension and acute kidney injury; influenced later guideline targets."
-      ]},
-
-      { name: "V-HEFT", field: "cardiology", hints: [
-        "Background: In the early 1980s, vasodilators were commonly used in HFrEF, though the mortality benefit was unknown. This 1986 trial predated beta blocker and ACE-i, and studied the effect of isordil-hydral and prazosin compared to placebo.",
-        "Population: Adults with dilated cardiomyopathy with LVEF <45% were randomized to isordil-hydral (N=186), prazosin (N=183), or placebo (N=273).",
-        "Primary outcome: Mortality was 38.7% in isordil-hydral group vs 49.7% prazosin vs 44.0% placebo, which was not significant (p=0.093).",
-        "Secondary outcomes: Risk reduction for mortality by two years was 34% in the isordil-hydral group compared to placebo. Mortality in the prazosin group was similar to that in the placebo group. LVEF rose significantly at eight weeks and one year in the group treated with isordil-hydral compared to the other two groups. A subgroup analysis suggested a statistically significant mortality benefit in African American patients with isordil-hydral, motivating the later A-HeFT trial (2004).",
-        ],
-        pearls: "",
-        doi: "DOI: 10.1056/NEJM19860612314240",
-        link: "https://www.nejm.org/doi/pdf/10.1056/NEJM198606123142404",
-      },
-
-      // Surgery Trials
-
-      { name: "FOCUS", field: "surgery", hints: [
-        "Background: Studied restrictive versus liberal transfusion strategies in hip fracture surgery; builds on prior perioperative transfusion research.",
-        "Population: Elderly patients undergoing hip fracture surgery.",
-        "Primary outcome: Restrictive transfusion strategy was noninferior for functional recovery.",
-        "Secondary outcomes: No difference in mortality; influenced later perioperative transfusion guidelines."
-      ]},
-
-      // Internal Medicine Trials
-
-      { name: "RECOVERY", field: "internal", hints: [
-        "Background: Investigated repurposed drugs for COVID-19, building on early pandemic antiviral trials.",
-        "Population: Hospitalized COVID-19 patients across UK NHS hospitals.",
-        "Primary outcome: Dexamethasone reduced 28-day mortality.",
-        "Secondary outcomes: No benefit in patients not requiring oxygen; informed multiple subsequent COVID-19 trials."
-      ]},
-      { name: "ACCORD", field: "internal", hints: [
-        "Background: Tested intensive glucose lowering in type 2 diabetes; built on UKPDS findings.",
-        "Population: Adults with type 2 diabetes and high cardiovascular risk.",
-        "Primary outcome: Intensive glycemic control increased all-cause mortality.",
-        "Secondary outcomes: Reduced nonfatal MI; influenced subsequent glycemic target recommendations."
-      ]}
     ];
 
-    let trial;
-    let attempts;
-    let inputs;
-    let shownHints;
-    let currentField = 'all';
-
+    // field button listener
     document.querySelectorAll('.field-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.field-btn').forEach(b => b.classList.remove('active'));
@@ -322,6 +773,21 @@
         newGame();
       });
     });
+
+    // mode button listener
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        gameMode = btn.dataset.mode;
+
+        updateFieldButtonVisibility();
+        updateNewTrialVisibility();
+        newGame();
+      });
+    });
+
 
     function setupInputs() {
       const container = document.getElementById("letters");
@@ -462,6 +928,20 @@
 
       // win condition
       if (guess === trial.name) {
+        // marks daily puzzle won
+        if (gameMode === "daily") {
+          localStorage.setItem(DAILY_KEY, getTodayKey());
+        }
+
+        currentStreak++; // updates your streak
+        
+        bestStreak = Math.max(bestStreak, currentStreak);
+
+        localStorage.setItem("currentStreak", currentStreak);
+        localStorage.setItem("bestStreak", bestStreak);
+
+        updateStreakDisplay();
+
         let feedback =
           attempts === 1 ? "Strong work" :
           attempts === 2 ? "Rockstar" :
@@ -469,8 +949,14 @@
           attempts === 4 ? "Great persistance" :
           "Read more";
 
-        document.getElementById("message").textContent = `${feedback}. The trial was ${trial.name}.`;
-
+        // if there's a pearl, add it to the feedback section!
+        if (trial.pearls !== "") {
+          document.getElementById("message").innerHTML = `${feedback}. The trial was ${trial.name}. <br><br>👩🏻‍⚕️💬 ${trial.pearls} <br><br>📖 For more reading, see: <a href="${trial.link}" target="_blank" rel"noopener noreferrer"> ${trial.doi} </a>`;
+        }
+        else {
+          document.getElementById("message").innerHTML = `${feedback}. The trial was ${trial.name}. <br><br> 📖 For more reading, see: <a href="${trial.link}" target="_blank" rel"noopener noreferrer"> ${trial.doi} </a>`;
+        }
+        
         revealAllHints();
 
         // this removes the guess field once the game is won
@@ -483,13 +969,44 @@
         return;
       }
 
+      // loss condition
+      if (attempts >= MAX_ATTEMPTS) {
+        // marks daily puzzle lost
+        if (gameMode === "daily") {
+          localStorage.setItem(DAILY_KEY, getTodayKey());
+        }
+
+        currentStreak = 0;
+        localStorage.setItem("currentStreak",0);
+        updateStreakDisplay();
+
+        document.getElementById("message").innerHTML =
+          `Read more. The correct answer was <strong>${trial.name}</strong>.
+           <br><br> 📖 For more reading, see:
+           <a href="${trial.link}" target="_blank" rel="noopener noreferrer">
+             ${trial.doi}
+           </a>`;
+
+        revealAllHints();
+
+        // disable further guessing
+        document.getElementById("letters").style.display = "none";
+        document.getElementById("guessBtn").style.display = "none";
+
+        // allow sharing results
+        document.getElementById("shareBtn").style.display = "block";
+
+        return;
+      }
+
+
       inputs.forEach(i => i.value = "");
       inputs[0].focus();
     }
 
     function shareResults() {
       const rows = document.querySelectorAll("#history .row");
-      let output = `NEJM-le ${attempts}/4\n`;
+      let output = `journ.le ${attempts}${MAX_ATTEMPTS}\n`;
 
       rows.forEach(row => {
         const letters = row.querySelectorAll("input.letter");
@@ -502,8 +1019,60 @@
       });
 
       navigator.clipboard.writeText(output).then(() => {
-        document.getElementById("message").textContent += " (Results copied!)";
+        document.getElementById("message").innerHTML += "<br><br>(Results copied!)";
       });
+    }
+
+    function updateStreakDisplay() {
+      document.getElementById("streakDisplay").textContent =
+        `🔥 Streak: ${currentStreak} | Best: ${bestStreak}`;
+    }
+
+    function updateFieldButtonVisibility() {
+      const container = document.getElementById("fieldButtonContainer");
+
+      if (gameMode === "daily") {
+        container.style.display = "none";
+        currentField = "all";
+      } else {
+        container.style.display = "flex";
+      }
+    }
+
+    function getDailyTrial(pool) {
+      const today = new Date().toISOString().split("T")[0];
+
+      const eligible = pool
+        .filter(t => t.releaseDate && t.releaseDate <= today)
+        .sort((a, b) => b.releaseDate.localeCompare(a.releaseDate));
+
+      if (eligible.length > 0) {
+        return eligible[0]; // most recent past release
+      }
+
+      // Fallback: earliest scheduled trial (or random, your choice)
+      return pool
+        .filter(t => t.releaseDate)
+        .sort((a, b) => a.releaseDate.localeCompare(b.releaseDate))[0];
+    }
+
+    function isReleased(trial) {
+      if (!trial.releaseDate) return false;
+      const today = new Date().toISOString().split("T")[0];
+      return trial.releaseDate <= today;
+    }
+
+    function getTodayKey() {
+      return new Date().toISOString().split("T")[0];
+    }
+
+    function isDailyCompleted() {
+      return localStorage.getItem(DAILY_KEY) === getTodayKey();
+    }
+
+    function updateNewTrialVisibility() {
+      const btn = document.querySelector("button.secondary[onclick='newGame()']");
+      btn.style.display = gameMode === "daily" ? "none" : "block";
     }
 
     function newGame() {
@@ -515,13 +1084,41 @@
       // restores the share result button
       document.getElementById("shareBtn").style.display = "none";
 
-      const pool = currentField === 'all' ? trials : trials.filter(t => t.field === currentField);
-      trial = pool[Math.floor(Math.random() * pool.length)];
+      let pool;
+      if (gameMode === "daily") {
+        pool = trials;
+        trial = getDailyTrial(pool);
+      } else {
+        pool = trials.filter(isReleased);
+
+        if (currentField !== 'all') {
+          pool = pool.filter(t => t.field === currentField);
+        }
+
+        trial = pool[Math.floor(Math.random() * pool.length)];
+      }
+
       attempts = 0;
       shownHints = 0;
       document.getElementById("history").innerHTML = "";
       document.getElementById("message").textContent = "";
       document.getElementById("hintList").innerHTML = "";
+
+      // checks to see if puzzle already answered
+      if (gameMode === "daily" && isDailyCompleted()) {
+        document.getElementById("message").innerHTML =
+          `You've already completed today's puzzle.
+           <br><br>Come back tomorrow for a new trial.`;
+
+        revealAllHints();
+
+        document.getElementById("letters").style.display = "none";
+        document.getElementById("guessBtn").style.display = "none";
+        document.getElementById("shareBtn").style.display = "block";
+
+        return;
+      }
+
       setupInputs();
       addHint();
     }
@@ -529,6 +1126,8 @@
     document.getElementById("guessBtn").addEventListener("click", submitGuess);
     document.getElementById("shareBtn").addEventListener("click", shareResults);
     newGame();
+    updateFieldButtonVisibility();
+    updateNewTrialVisibility();
   </script>
 </body>
 </html>
