@@ -179,14 +179,17 @@
     </div>
 
     <h1> 📚 journ.le</h1>
-        <div id="streakDisplay">🔥 Streak: 0 | Best: 0</div>
+        <div id="streakDisplay">🔥 Streak: 0</div>
     <p>Guess the name of an influential randomized controlled trial.</p>
 
     <div id="fieldButtonContainer" class="field-buttons">
       <button class="field-btn active" data-field="all">All</button>
-      <button class="field-btn" data-field="cardiology">Cardiology</button>
-      <button class="field-btn" data-field="internal">Internal Medicine</button>
-      <button class="field-btn" data-field="surgery">Surgery</button>
+      <button class="field-btn" data-field="internal">📋</button>
+      <button class="field-btn" data-field="cardiology">🫀</button>
+      <button class="field-btn" data-field="crit">🫁</button>
+      <button class="field-btn" data-field="beans">🧂</button>
+      <button class="field-btn" data-field="gil">🍻</button>
+      <button class="field-btn" data-field="surgery">🔪</button>
     </div>
 
     <div class="hints">
@@ -206,28 +209,34 @@
   </div>
 
   <script>
-    // ****************
+    // ********************************
     // GLOBAL VARIABLES
-    // ****************
+    // ********************************
 
     // this is a state variable that can be toggled depending on length of trial name
     let sizeMode = "normal"; // "normal" | "compact" | "ultracompact"
 
     // load streak information
-    let currentStreak = Number(localStorage.getItem("currentStreak")) || 0;
-    let bestStreak = Number(localStorage.getItem("bestStreak")) || 0;
+    let dailyStreak = 0;
+    let lastStreakDate = null; // YYYY-MM-DD
 
     let trial;
     let attempts;
     let inputs;
     let shownHints;
     let currentField = 'all';
+    let lastArchiveField = "all";
 
     let gameMode = "daily"; // "daily" | "archive"
 
-    // instantiate some variables
+    let __debugDateOverride = null;
+
+    // instantiate some globals/global variables
     const MAX_ATTEMPTS = 6;
     const DAILY_KEY = "dailyCompletedDate";
+    const DAILY_STATE_KEY = "dailyGameState";
+    const DAILY_STREAK_KEY = "dailyStreak";
+    const LAST_STREAK_DATE_KEY = "lastStreakDate";
     const trials = [
 
     // **************
@@ -321,41 +330,41 @@
         link: "https://www.nejm.org/doi/full/10.1056/NEJMoa070829"
       },
 
-      // { name: "CONSENSUS", field: "cardiology",
-      // hints: [
-      //   "Background: ***",
-      //   "Population: ***",
-      //   "Primary outcome: ***",
-      //   "Secondary outcomes: ***"
-      // ],
-      //   pearls: "",
-      //   doi: "",
-      //   link: ""
-      // },
+      { name: "CONSENSUS", field: "cardiology", releaseDate: "2026-02-04",
+      hints: [
+        "Background: Treatment of heart failure in the 1980s and before consisted of digoxin and diuretics. This 1987 trial was the first to demonstrate a mortality benefit of ACE-inhibitors in class IV HFrEF.",
+        "Population: Across 35 centers in Scandinavia, patients with HFrEF and NYHA class IV symptoms were randomized to receive enalapril (N=127) or placebo (N=126).",
+        "Primary outcome: Six-month mortality was 26% in the enalapril group vs 44% in the placebo group (RR 0.60 with NNT of 6).",
+        "Secondary outcomes: Mortality at one year and total mortality over the study period were both significantly lower in the ACE-i group (RR 0.69 and RR 0.73, respectively)."
+      ],
+        pearls: "The results of the CONSENSUS trial and others, including SOLVD (1991), informed the AHA/ACCF 2013 Heart Failure Guidelines to recommend ACE-i for all patients with HFrEF unless contraindicated (class I, level A).",
+        doi: "DOI: 10.1056/NEJM198706043162301",
+        link: "https://www.nejm.org/doi/full/10.1056/NEJM198706043162301"
+      },
 
-      // { name: "COMET", field: "cardiology",
-      // hints: [
-      //   "Background: ***",
-      //   "Population: ***",
-      //   "Primary outcome: ***",
-      //   "Secondary outcomes: ***"
-      // ],
-      //   pearls: "",
-      //   doi: "",
-      //   link: ""
-      // },
+      { name: "COMET", field: "cardiology", releaseDate: "2026-02-05",
+      hints: [
+        "Background: This 2003 trial compared carvedilol and metoprolol in class II-IV heart failure. This trial built on previous trials such as MERIT-HF (1999) and COPERNICUS (2002), which demonstrated a mortality benefit for metoprolol and carvedilol in HFrEF.",
+        "Population: Patients with LVEF<35% and NYHA class II-IV symptoms were randomized to receive carvedilol (N=1511) or metoprolol tartrate (N=1518).",
+        "Primary outcome: All-cause mortality was lower in the carvedilol group (HR 0.83), which was significant by six months. All-cause mortality or any hospital admission was not significantly different between groups.",
+        "Secondary outcomes: Cardiovascular mortality was lower in the carvedilol group (HR 0.80)."
+      ],
+        pearls: "The target metoprolol tartrate dose in this trial was 50mg bid, which is lower than the target dose of metoprolol succinate 200mg qday shown to have a mortality benefit in the MERIT-HF trial. Moreover, previous studies demonstrating a mortality benefit of metoprolol did not use the tartrate formulation.",
+        doi: "DOI: 10.1016/S0140-6736(03)13800-7",
+        link: "https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(03)13800-7/abstract"
+      },
 
-      // { name: "COPERNICUS", field: "cardiology",
-      // hints: [
-      //   "Background: ***",
-      //   "Population: ***",
-      //   "Primary outcome: ***",
-      //   "Secondary outcomes: ***"
-      // ],
-      //   pearls: "",
-      //   doi: "",
-      //   link: ""
-      // },
+      { name: "COPERNICUS", field: "cardiology", releaseDate: "2026-02-03",
+      hints: [
+        "Background: Beta blockers (BBs) have been well described to provide a mortality benefit for patients in HFrEF. This 2002 study first demonstrated the role of BBs in severely reduced EF (EF<25%).",
+        "Population: Patients with class III-IV HF and EF <25% were randomized to receive carvedilol (N=1156) or placebo (N=1133).",
+        "Primary outcome: Annual mortality was lower in the carvedilol group (12.8% vs 19.7% with RR 0.65 and NNT 15).",
+        "Secondary outcomes: Death and/or hospitalization was lower in the carvedilol group. Serious adverse events, heart failure, and cariogenic shock were less likely to occur in the carvedilol group."
+      ],
+        pearls: "The COPERNICUS trial-alongside the CIBIS-II and MERIT-HF trials-laid the groundwork for the 2013 AHA/ACCF Heart Failure Guidelines recommending use of bisoprolol, carvedilol, or metoprolol succinate for all patients with HFrEF (Class I, Level A).",
+        doi: "DOI: 10.1161/01.CIR.0000035653.72855.BF",
+        link: "https://www.ahajournals.org/doi/full/10.1161/01.cir.0000035653.72855.bf"
+      },
 
       { name: "EMPEROR-PRESERVED", field: "cardiology", releaseDate: "2026-01-18",
       hints: [
@@ -393,16 +402,17 @@
         link: "https://www.nejm.org/doi/full/10.1056/NEJM200001203420301"
       },
 
-      // { name: "MERIT-HF", field: "cardiology", hints: [
-      //   "Background: ***",
-      //   "Population: ***",
-      //   "Primary outcome: ***",
-      //   "Secondary outcomes: ***"
-      // ],
-      //   pearls: "",
-      //   doi: "",
-      //   link: ""
-      // },
+      { name: "MERIT-HF", field: "cardiology", releaseDate: "2026-01-04",
+      hints: [
+        "Background: The CIBIS trial demonstrated functional benefit of bisoprolol for patients with HFrEF vis-à-vis reduced heart failure admissions. The study in question was one of two 1999 trials demonstrating mortality benefit for BBs, specifically focusing on metoprolol.",
+        "Population: Patients with EF≤40% and NYHA class II-IV were randomized to receive metoprolol succinate or placebo.",
+        "Primary outcome: All-cause mortality was lower in the metoprolol group with RR 0.34. All-cause mortality or hospitalization was also lower in the metoprolol group with RR 0.19.",
+        "Secondary outcomes: (1) All-cause mortality or HF hospitalization, (2) death or heart transplant, (3) cardiac death or nonfatal MI, and (4) all-cause mortality or all-cause hospitalization or ED visit for HF were all less likely to occur in the metoprolol group."
+      ],
+        pearls: "In addition to the CIBIS-II (1999) and COPERNICUS (2002) trials, the MERIT-HF trial informed the 2013 AHA/ACCF Heart Failure Guidelines recommending the use of bisoprolol, carvedilol, or metoprolol for patients with HFrEF. <br><br> Remember that this trial studied metoprolol succinate and not metoprolol tartrate. <br><br> Also remember that the target dose was an incredible 200mg of metoprolol succinate daily!",
+        doi: "DOI: 10.1016/S0140-6736(99)04440-2",
+        link: "https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(99)04440-2/abstract"
+      },
 
       { name: "PARTNER A", field: "cardiology", releaseDate: "2026-01-28",
       hints: [
@@ -604,7 +614,7 @@
       //   link: ""
       // },
 
-      { name: "DEXA-ARDS", field: "crit", releaseDate: "2026-01-15",
+      { name: "DEXA-ARDS", field: "crit", releaseDate: "2026-01-14",
       hints: [
         "Background: A meta-analysis of nine small randomized trials suggested the role of corticosteroids in reducing inflammation, improving gas exchange, and reducing the duration of mechanical ventilation and ICU stay in patients with ARDS (Annane, et al 2017, Guidelines from SCCM & ESICM). This 2020 trial was the first to demonstrate a benefit with dexamethasone in patients with ARDS.",
         "Population:  277 patients with ARDS across 17 hospitals in Spain were randomized to receive dexamethasone 20mg daily for five days, followed by 10mg daily for five days (N=139) or placebo (138).",
@@ -724,9 +734,22 @@
       //   link: ""
       // },
 
+      // Renal Trials
+      { name: "DAPA-CKD", field: "beans", releaseDate: "2026-02-06",
+      hints: [
+        "Background: Prior to this trial, the effect of SGLT2is on preventing progression of CKD in patients with T2DM was well described. This 2020 trial built on the results of EMPA-REG OUTCOME (2015) and CREDENCE (2019) to study the effect of SGLT2is on CKD in patients with and without T2DM.",
+        "Population: Patients with CKD (eGFR 25 - 75) with albuminuria (ACR 200 - 5000 mg/g) were randomized to receive dapagliflozin (N=2152) or placebo (N=2152).",
+        "Primary outcome: Decline of ≥50% in eGFR, new ESRD, renal mortality, or CVD mortality was lower in the SGLT2i group (HR 0.61 with NNT 19).",
+        "Secondary outcomes: All-cause mortality was lower in the SGLT2i group with HR 0.69 and NNT of 48. CVD mortality or HR hospitalization was lower in the SGLT2i group (HR 0.71). Finally, Decline of ≥50% in eGFR, new ESRD, and renal mortality was significantly lower in the SGLT2i group (HR 0.56)."
+      ],
+        pearls: "Isn't it thought provoking that the HR for all-cause mortality was lower in DAPA-CKD than it was in DAPA-HF (HR 0.83)? Perhaps SGLT2is should be thought of as renal GDMT.",
+        doi: "DOI: 10.1056/NEJMoa1911303",
+        link: "https://www.nejm.org/doi/full/10.1056/NEJMoa1911303"
+      },
+
       // Neurology Trials
 
-      { name: "CHANCE", field: "neurology", releaseDate: "2026-01-14",
+      { name: "CHANCE", field: "neurology", releaseDate: "2026-01-15",
       hints: [
         "Background: Antiplatelet therapy with ASA has  been known to be of modest benefit in secondary prevention of stroke. This 2013 trial examined the role of DAPT with ASA and plavix in patients following minor stroke or TIA.",
         "Population: Patients with high-risk TIA or minor stroke were randomized to ASA (N=2586) or ASA & clopidogrel (N=2584) for 90 days.",
@@ -764,12 +787,19 @@
 
     ];
 
+    // computed variables
+    dailyStreak = parseInt(localStorage.getItem(DAILY_STREAK_KEY)) || 0;
+    lastStreakDate = localStorage.getItem(LAST_STREAK_DATE_KEY);
+
     // field button listener
     document.querySelectorAll('.field-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.field-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         currentField = btn.getAttribute('data-field');
+        if (gameMode === "archive") {
+          lastArchiveField = currentField;
+        }
         newGame();
       });
     });
@@ -784,10 +814,279 @@
 
         updateFieldButtonVisibility();
         updateNewTrialVisibility();
+        updateShareButtonVisibility();
         newGame();
       });
     });
 
+    //*************************************
+    // HELPER FUNCTIONS -- ALPHABETIZED
+    //*************************************
+    function addHint() {
+      if (shownHints < trial.hints.length) {
+        const li = document.createElement("li");
+        li.textContent = trial.hints[shownHints];
+        document.getElementById("hintList").appendChild(li);
+        shownHints++;
+      }
+    }
+
+    function getDailyTrial(pool) {
+      const today = getTodayKey();
+
+      const eligible = pool
+        .filter(t => t.releaseDate && t.releaseDate <= today)
+        .sort((a, b) => b.releaseDate.localeCompare(a.releaseDate));
+
+      if (eligible.length > 0) {
+        return eligible[0]; // most recent past release
+      }
+
+      // Fallback: earliest scheduled trial (or random, your choice)
+      return pool
+        .filter(t => t.releaseDate)
+        .sort((a, b) => a.releaseDate.localeCompare(b.releaseDate))[0];
+    }
+
+    function getTodayKey() {
+      const date = __debugDateOverride
+        ? new Date(__debugDateOverride)
+        : new Date();
+
+      return date.toISOString().split("T")[0];
+    }
+
+    function isDailyCompleted() {
+      return localStorage.getItem(DAILY_KEY) === getTodayKey();
+    }
+
+    function isReleased(trial) {
+      if (!trial.releaseDate) return false;
+      return trial.releaseDate <= getTodayKey();
+    }
+
+    function loadDailyState() {
+      const raw = localStorage.getItem(DAILY_STATE_KEY);
+      if (!raw) return null;
+
+      const state = JSON.parse(raw);
+      if (state.date !== getTodayKey()) {
+        localStorage.removeItem(DAILY_STATE_KEY);
+        return null;
+      }
+      return state;
+    }
+
+    function newGame() {
+
+      // restores the guess field
+      document.getElementById("letters").style.display = "flex";
+      document.getElementById("guessBtn").style.display = "block";
+
+      // restores the share result button
+      document.getElementById("shareBtn").style.display = "none";
+
+      let pool;
+      if (gameMode === "daily") {
+        pool = trials;
+        trial = getDailyTrial(pool);
+      } else {
+        pool = trials.filter(isReleased);
+
+        if (currentField !== 'all') {
+          pool = pool.filter(t => t.field === currentField);
+        }
+
+        trial = pool[Math.floor(Math.random() * pool.length)];
+      }
+
+      attempts = 0;
+      shownHints = 0;
+      document.getElementById("history").innerHTML = "";
+      document.getElementById("message").textContent = "";
+      document.getElementById("hintList").innerHTML = "";
+
+      if (gameMode === "daily") {
+        streakDisplay.textContent = `🔥 Streak: ${dailyStreak}`;
+        streakDisplay.style.display = "block";
+      } else {
+        streakDisplay.style.display = "none";
+      }
+
+      // rehydrate UI
+      if (gameMode === "daily") {
+        const saved = loadDailyState();
+        if (saved) {
+          trial = trials.find(t => t.name === saved.trialName);
+
+          console.log(trial)
+
+          attempts = saved.attempts;
+          shownHints = 0;
+
+          document.getElementById("history").innerHTML = "";
+          document.getElementById("message").innerHTML = "";
+          document.getElementById("hintList").innerHTML = "";
+
+          setupInputs();
+
+          // Restore hints
+          for (let i = 0; i < saved.shownHints; i++) addHint();
+
+          // Restore guess history
+          saved.history.forEach(guess => {
+            console.log(guess)
+            renderGuessRow(guess); // see helper below
+          });
+
+          // End-state handling
+          if (saved.status !== "in-progress") {
+            if (saved.status === "won") {
+              renderWinMessage();
+            } else if (saved.status === "lost") {
+              renderLossMessage();
+            }
+
+            revealAllHints();
+            document.getElementById("letters").style.display = "none";
+            document.getElementById("guessBtn").style.display = "none";
+            document.getElementById("shareBtn").style.display = "block";
+          }
+
+          return;
+        }
+      }
+
+      setupInputs();
+      addHint();
+    }
+
+    function reconcileDailyStreak() {
+      const today = getTodayKey();
+
+      if (!lastStreakDate) return;
+
+      const prev = new Date(lastStreakDate);
+      const curr = new Date(today);
+      const diffDays = Math.floor((curr - prev) / (1000 * 60 * 60 * 24));
+
+      // missed ≥1 day
+      if (diffDays > 1) {
+        dailyStreak = 0;
+        localStorage.setItem(DAILY_STREAK_KEY, 0);
+      }
+    }
+
+    function renderGuessRow(guess) {
+      const row = document.createElement("div");
+      row.className = "row";
+
+      if (sizeMode !== "normal") row.classList.add(sizeMode);
+
+      [...guess].forEach((letter, i) => {
+        if (letter === "-") {
+          const dash = document.createElement("span");
+          dash.className = "hyphen";
+          dash.textContent = "-";
+          row.appendChild(dash);
+          return;
+        }
+
+        if (letter === " ") {
+          const space = document.createElement("span");
+          space.className = "space";
+          row.appendChild(space);
+          return;
+        }
+
+        const box = document.createElement("input");
+        box.className = "letter";
+        box.disabled = true;
+        box.value = letter;
+        box.classList.add(
+          letter === trial.name[i]
+            ? "correct"
+            : trial.name.includes(letter)
+            ? "present"
+            : "absent"
+        );
+        row.appendChild(box);
+      });
+
+      document.getElementById("history").appendChild(row);
+    }
+
+    function renderLossMessage() {
+      document.getElementById("message").innerHTML =
+        `Read more. The correct answer was <strong>${trial.name}</strong>.<br><br>
+         📖 For more reading, see:
+         <a href="${trial.link}" target="_blank" rel="noopener noreferrer">
+           ${trial.doi}
+         </a>`;
+    }
+
+    function renderWinMessage() {
+      let feedback =
+        attempts === 1 ? "Strong work" :
+        attempts === 2 ? "Rockstar" :
+        attempts === 3 ? "Splendid" :
+        attempts === 4 ? "Great persistance" :
+        "Read more";
+
+      if (trial.pearls) {
+        document.getElementById("message").innerHTML =
+          `${feedback}. The trial was ${trial.name}.<br><br>
+           👩🏻‍⚕️💬 ${trial.pearls}<br><br>
+           📖 For more reading, see:
+           <a href="${trial.link}" target="_blank" rel="noopener noreferrer">
+             ${trial.doi}
+           </a>`;
+      } else {
+        document.getElementById("message").innerHTML =
+          `${feedback}. The trial was ${trial.name}.<br><br>
+           📖 For more reading, see:
+           <a href="${trial.link}" target="_blank" rel="noopener noreferrer">
+             ${trial.doi}
+           </a>`;
+      }
+    }
+
+    function revealAllHints() {
+      while (shownHints < trial.hints.length) addHint();
+    }
+
+    function saveDailyState(status = "in-progress") {
+      if (gameMode !== "daily") return;
+
+      const historyGuesses = Array.from(
+        document.querySelectorAll("#history .row")
+      ).map(row => {
+        const chars = trial.name.split("");
+        let letterIdx = 0;
+
+        chars.forEach((c, i) => {
+          if (c !== "-" && c !== " ") {
+            const input = row.querySelectorAll("input.letter")[letterIdx];
+            chars[i] = input?.value || "";
+            letterIdx++;
+          }
+        });
+
+        return chars.join("");
+      });
+
+
+      const state = {
+        date: getTodayKey(),
+        trialName: trial.name,
+        attempts,
+        shownHints,
+        history: historyGuesses,
+        status
+      };
+
+      localStorage.setItem(DAILY_STATE_KEY, JSON.stringify(state));
+    }
 
     function setupInputs() {
       const container = document.getElementById("letters");
@@ -857,19 +1156,6 @@
       if (inputs.length) inputs[0].focus();
     }
 
-    function addHint() {
-      if (shownHints < trial.hints.length) {
-        const li = document.createElement("li");
-        li.textContent = trial.hints[shownHints];
-        document.getElementById("hintList").appendChild(li);
-        shownHints++;
-      }
-    }
-
-    function revealAllHints() {
-      while (shownHints < trial.hints.length) addHint();
-    }
-
     function submitGuess() {
       let guessArray = trial.name.split("");
 
@@ -885,78 +1171,19 @@
 
       attempts++;
       addHint();
+      saveDailyState();
 
-      const row = document.createElement("div");
-      row.className = "row";
-
-      if (sizeMode !== "normal") {
-        row.classList.add(sizeMode);
-      }
-
-      [...guess].forEach((letter, i) => {
-      if (letter === "-") {
-        const dash = document.createElement("span");
-        dash.className = "hyphen";
-        dash.textContent = "-";
-        row.appendChild(dash);
-        return;
-      }
-
-      if (letter === " ") {
-        const space = document.createElement("span");
-        space.className = "space";
-        row.appendChild(space);
-        return;
-      }
-
-
-        const box = document.createElement("input");
-        box.className = "letter";
-        box.disabled = true;
-        box.value = letter;
-        box.classList.add(
-          letter === trial.name[i]
-            ? "correct"
-            : trial.name.includes(letter)
-            ? "present"
-            : "absent"
-        );
-        row.appendChild(box);
-      });
-
-      document.getElementById("history").appendChild(row);
+      renderGuessRow(guess);
 
       // win condition
       if (guess === trial.name) {
+
         // marks daily puzzle won
         if (gameMode === "daily") {
           localStorage.setItem(DAILY_KEY, getTodayKey());
         }
 
-        currentStreak++; // updates your streak
-        
-        bestStreak = Math.max(bestStreak, currentStreak);
-
-        localStorage.setItem("currentStreak", currentStreak);
-        localStorage.setItem("bestStreak", bestStreak);
-
-        updateStreakDisplay();
-
-        let feedback =
-          attempts === 1 ? "Strong work" :
-          attempts === 2 ? "Rockstar" :
-          attempts === 3 ? "Splendid" :
-          attempts === 4 ? "Great persistance" :
-          "Read more";
-
-        // if there's a pearl, add it to the feedback section!
-        if (trial.pearls !== "") {
-          document.getElementById("message").innerHTML = `${feedback}. The trial was ${trial.name}. <br><br>👩🏻‍⚕️💬 ${trial.pearls} <br><br>📖 For more reading, see: <a href="${trial.link}" target="_blank" rel"noopener noreferrer"> ${trial.doi} </a>`;
-        }
-        else {
-          document.getElementById("message").innerHTML = `${feedback}. The trial was ${trial.name}. <br><br> 📖 For more reading, see: <a href="${trial.link}" target="_blank" rel"noopener noreferrer"> ${trial.doi} </a>`;
-        }
-        
+        renderWinMessage();
         revealAllHints();
 
         // this removes the guess field once the game is won
@@ -964,7 +1191,28 @@
         document.getElementById("guessBtn").style.display = "none";
 
         // show the share result button (previously hidden)
-        document.getElementById("shareBtn").style.display = "block";
+        if (gameMode === "daily") {
+          document.getElementById("shareBtn").style.display = "block";
+        }
+  
+        // save state as won
+        saveDailyState("won");
+
+        // update streak information
+        if (gameMode === "daily") {
+          const today = getTodayKey();
+
+          if (lastStreakDate !== today) {
+            dailyStreak++;
+            lastStreakDate = today;
+
+            localStorage.setItem(DAILY_STREAK_KEY, dailyStreak);
+            localStorage.setItem(LAST_STREAK_DATE_KEY, today);
+            
+            streakDisplay.textContent = `🔥 Streak: ${dailyStreak}`;
+            streakDisplay.style.display = "block";
+          }
+        }
 
         return;
       }
@@ -976,17 +1224,7 @@
           localStorage.setItem(DAILY_KEY, getTodayKey());
         }
 
-        currentStreak = 0;
-        localStorage.setItem("currentStreak",0);
-        updateStreakDisplay();
-
-        document.getElementById("message").innerHTML =
-          `Read more. The correct answer was <strong>${trial.name}</strong>.
-           <br><br> 📖 For more reading, see:
-           <a href="${trial.link}" target="_blank" rel="noopener noreferrer">
-             ${trial.doi}
-           </a>`;
-
+        renderLossMessage();
         revealAllHints();
 
         // disable further guessing
@@ -994,7 +1232,23 @@
         document.getElementById("guessBtn").style.display = "none";
 
         // allow sharing results
-        document.getElementById("shareBtn").style.display = "block";
+        if (gameMode === "daily") {
+          document.getElementById("shareBtn").style.display = "block";
+        }
+
+        // save state as lost
+        saveDailyState("lost");
+
+        if (gameMode === "daily") {
+          dailyStreak = 0;
+          lastStreakDate = getTodayKey();
+
+          localStorage.setItem(DAILY_STREAK_KEY, 0);
+          localStorage.setItem(LAST_STREAK_DATE_KEY, lastStreakDate);
+
+          streakDisplay.textContent = `🔥 Streak: ${dailyStreak}`;
+          streakDisplay.style.display = "block";
+        }
 
         return;
       }
@@ -1006,7 +1260,7 @@
 
     function shareResults() {
       const rows = document.querySelectorAll("#history .row");
-      let output = `journ.le ${attempts}${MAX_ATTEMPTS}\n`;
+      let output = `journ.le ${attempts}/${MAX_ATTEMPTS}\n`;
 
       rows.forEach(row => {
         const letters = row.querySelectorAll("input.letter");
@@ -1018,14 +1272,13 @@
         output += "\n";
       });
 
+      if (dailyStreak > 0) {
+        output += `🔥 Streak: ${dailyStreak}\n`;
+      }
+
       navigator.clipboard.writeText(output).then(() => {
         document.getElementById("message").innerHTML += "<br><br>(Results copied!)";
       });
-    }
-
-    function updateStreakDisplay() {
-      document.getElementById("streakDisplay").textContent =
-        `🔥 Streak: ${currentStreak} | Best: ${bestStreak}`;
     }
 
     function updateFieldButtonVisibility() {
@@ -1036,38 +1289,18 @@
         currentField = "all";
       } else {
         container.style.display = "flex";
+
+        // 🔑 restore last archive field
+        currentField = lastArchiveField;
+
+        document.querySelectorAll(".field-btn").forEach(btn =>
+          btn.classList.remove("active")
+        );
+
+        document
+          .querySelector(`.field-btn[data-field="${currentField}"]`)
+          ?.classList.add("active");
       }
-    }
-
-    function getDailyTrial(pool) {
-      const today = new Date().toISOString().split("T")[0];
-
-      const eligible = pool
-        .filter(t => t.releaseDate && t.releaseDate <= today)
-        .sort((a, b) => b.releaseDate.localeCompare(a.releaseDate));
-
-      if (eligible.length > 0) {
-        return eligible[0]; // most recent past release
-      }
-
-      // Fallback: earliest scheduled trial (or random, your choice)
-      return pool
-        .filter(t => t.releaseDate)
-        .sort((a, b) => a.releaseDate.localeCompare(b.releaseDate))[0];
-    }
-
-    function isReleased(trial) {
-      if (!trial.releaseDate) return false;
-      const today = new Date().toISOString().split("T")[0];
-      return trial.releaseDate <= today;
-    }
-
-    function getTodayKey() {
-      return new Date().toISOString().split("T")[0];
-    }
-
-    function isDailyCompleted() {
-      return localStorage.getItem(DAILY_KEY) === getTodayKey();
     }
 
     function updateNewTrialVisibility() {
@@ -1075,52 +1308,12 @@
       btn.style.display = gameMode === "daily" ? "none" : "block";
     }
 
-    function newGame() {
+    function updateShareButtonVisibility() {
+      const btn = document.getElementById("shareBtn");
 
-      // restores the guess field
-      document.getElementById("letters").style.display = "flex";
-      document.getElementById("guessBtn").style.display = "block";
-
-      // restores the share result button
-      document.getElementById("shareBtn").style.display = "none";
-
-      let pool;
-      if (gameMode === "daily") {
-        pool = trials;
-        trial = getDailyTrial(pool);
-      } else {
-        pool = trials.filter(isReleased);
-
-        if (currentField !== 'all') {
-          pool = pool.filter(t => t.field === currentField);
-        }
-
-        trial = pool[Math.floor(Math.random() * pool.length)];
+      if (gameMode === "archive") {
+        btn.style.display = "none";
       }
-
-      attempts = 0;
-      shownHints = 0;
-      document.getElementById("history").innerHTML = "";
-      document.getElementById("message").textContent = "";
-      document.getElementById("hintList").innerHTML = "";
-
-      // checks to see if puzzle already answered
-      if (gameMode === "daily" && isDailyCompleted()) {
-        document.getElementById("message").innerHTML =
-          `You've already completed today's puzzle.
-           <br><br>Come back tomorrow for a new trial.`;
-
-        revealAllHints();
-
-        document.getElementById("letters").style.display = "none";
-        document.getElementById("guessBtn").style.display = "none";
-        document.getElementById("shareBtn").style.display = "block";
-
-        return;
-      }
-
-      setupInputs();
-      addHint();
     }
 
     document.getElementById("guessBtn").addEventListener("click", submitGuess);
@@ -1128,6 +1321,39 @@
     newGame();
     updateFieldButtonVisibility();
     updateNewTrialVisibility();
+    reconcileDailyStreak();
+
+    //*************************************
+    // DEVELOPER FUNCTIONS -- TO BE DELETED
+    //*************************************
+
+    // this is a helper function which is for development only. allows to rapidly check behavior on day to day
+    window.resetDaily = function () {
+      localStorage.removeItem("dailyGameState");
+      localStorage.removeItem("dailyCompletedDate");
+      location.reload();
+    };
+
+    window.setDebugDate = function (isoDateString) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(isoDateString)) {
+        console.error("Date must be in YYYY-MM-DD format");
+        return;
+      }
+
+      __debugDateOverride = isoDateString;
+      console.log(`🕒 Debug date set to ${isoDateString}`);
+    };
+
+    window.clearDebugDate = function () {
+      __debugDateOverride = null;
+      console.log("🕒 Debug date override cleared (using real date)");
+    };
+
+    window.showDebugDate = function () {
+      console.log("🕒 Current effective date:", getTodayKey());
+    };
+
+
   </script>
 </body>
 </html>
