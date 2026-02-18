@@ -1,0 +1,56 @@
+trial_name,field
+POBASCAM,uspstf
+NORDICC,uspstf
+HUNGARIAN,internal
+ACCORD,internal
+AATAC,cardiology
+A-HEFT,cardiology
+AFFIRM,cardiology
+BLOCK-HF,cardiology
+CIBIS,cardiology
+CIBIS-II,cardiology
+COURAGE,cardiology
+CONSENSUS,cardiology
+COMET,cardiology
+COPERNICUS,cardiology
+EMPEROR-PRESERVED,cardiology
+FIRE AND ICE,cardiology
+HOPE,cardiology
+MADIT-CRT,cardiology
+MADIT-II,cardiology
+MERIT-HF,cardiology
+PARTNER A,cardiology
+PRAETORIAN,cardiology
+SPRINT,cardiology
+V-HEFT,cardiology
+VANISH,cardiology
+3SITES,crit
+ANDROMEDA-SHOCK,crit
+APROCCHSS,crit
+ARDSNET,crit
+CAPE COD,crit
+CESAR,crit
+DEXA-ARDS,crit
+FACTT,crit
+CSG CAPTOPRIL,beans
+CYCLOPS,beans
+DAPA-CKD,beans
+DASH,beans
+SALT-ED,beans
+FIDELIO-DKD,beans
+RITUXVAS,beans
+CHANCE,neurology
+WATERFALL,gil
+ALBUMIN FOR SBP,gil
+COLONPREV,gil
+SONIC,gil
+EARLY TIPS,gil
+APPAC,surgery
+ACAS,surgery
+CREST,surgery
+FOCUS,surgery
+NETT,surgery
+POISE,surgery
+POISE-2 ASA,surgery
+RESCUEICP,surgery
+TRICS III,surgery
