@@ -1,2 +1,2 @@
-# nejmle
-guess a NEJM randomized control trial name in four tries
+# journle
+guess a randomized control trial name in six tries
