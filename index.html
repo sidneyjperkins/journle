@@ -21,12 +21,9 @@
       padding: 2rem;
       border-radius: 12px;
       box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-      max-width: 460px;
-      width: 100%;
-      box-sizing: border-box;   /* ADD THIS */
+      width: 460px;
       text-align: center;
     }
-
     h1 {
       margin-bottom: 0.25rem;
       font-family: "Courier New", serif;
@@ -85,10 +82,10 @@
     }
 
     input.letter {
-      width: min(9vw, 44px);
-      height: min(9vw, 44px);
-      font-size: min(5vw, 1.3rem);
+      width: 44px;
+      height: 44px;
       text-align: center;
+      font-size: 1.3rem;
       font-weight: bold;
       text-transform: uppercase;
       border: 2px solid #ccc;
@@ -125,16 +122,16 @@
     .message { margin-top: 0.75rem; font-weight: bold; }
 
     .hyphen {
-      font-size: min(5vw, 1.4rem);
-      line-height: min(9vw, 44px);
-      width: min(3vw, 12px);
+      font-size: 1.4rem;
       font-weight: bold;
+      line-height: 44px;
+      width: 12px;
       text-align: center;
     }
 
     .space {
-      width: min(6vw, 24px);
-      height: min(9vw, 44px);
+      width: 24px;
+      height: 44px;
     }
 
     /* Compact mode for long trial names */
@@ -188,10 +185,6 @@
       text-decoration: underline;
     }
 
-    .game {
-      box-sizing: border-box;
-    }
-
     #submitTrial textarea,
     #submitTrial input {
       width: 97%;
@@ -205,43 +198,6 @@
       margin-top: 0.5rem;
       padding: 0.4rem;
       font-family: inherit;
-    }
-
-    @media (max-width: 480px) {
-
-      body {
-        padding-top: 1rem;
-      }
-
-      .game {
-        padding: 1rem;
-      }
-
-      input.letter {
-        width: 32px;
-        height: 32px;
-        font-size: 1rem;
-      }
-
-      .hyphen {
-        line-height: 32px;
-        font-size: 1.1rem;
-      }
-
-      .space {
-        width: 16px;
-        height: 32px;
-      }
-
-      .mode-buttons,
-      .field-buttons {
-        flex-wrap: wrap;
-      }
-
-    }
-
-    body {
-      overflow-x: hidden;
     }
 
   </style>
