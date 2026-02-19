@@ -23,8 +23,10 @@
       box-shadow: 0 10px 25px rgba(0,0,0,0.1);
       max-width: 460px;
       width: 100%;
+      box-sizing: border-box;   /* ADD THIS */
       text-align: center;
     }
+
     h1 {
       margin-bottom: 0.25rem;
       font-family: "Courier New", serif;
@@ -79,7 +81,7 @@
       display: flex;
       justify-content: center;
       gap: 0.5rem;
-      margin-top: 0.75rem;
+      flex-wrap: wrap;   /* ADD THIS */
     }
 
     input.letter {
@@ -199,6 +201,43 @@
       margin-top: 0.5rem;
       padding: 0.4rem;
       font-family: inherit;
+    }
+
+    @media (max-width: 480px) {
+
+      body {
+        padding-top: 1rem;
+      }
+
+      .game {
+        padding: 1rem;
+      }
+
+      input.letter {
+        width: 32px;
+        height: 32px;
+        font-size: 1rem;
+      }
+
+      .hyphen {
+        line-height: 32px;
+        font-size: 1.1rem;
+      }
+
+      .space {
+        width: 16px;
+        height: 32px;
+      }
+
+      .mode-buttons,
+      .field-buttons {
+        flex-wrap: wrap;
+      }
+
+    }
+
+    body {
+      overflow-x: hidden;
     }
 
   </style>
