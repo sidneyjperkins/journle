@@ -81,14 +81,14 @@
       display: flex;
       justify-content: center;
       gap: 0.5rem;
-      flex-wrap: wrap;   /* ADD THIS */
+      margin-top: 0.75rem;
     }
 
     input.letter {
-      width: 44px;
-      height: 44px;
+      width: min(9vw, 44px);
+      height: min(9vw, 44px);
+      font-size: min(5vw, 1.3rem);
       text-align: center;
-      font-size: 1.3rem;
       font-weight: bold;
       text-transform: uppercase;
       border: 2px solid #ccc;
@@ -125,16 +125,16 @@
     .message { margin-top: 0.75rem; font-weight: bold; }
 
     .hyphen {
-      font-size: 1.4rem;
+      font-size: min(5vw, 1.4rem);
+      line-height: min(9vw, 44px);
+      width: min(3vw, 12px);
       font-weight: bold;
-      line-height: 44px;
-      width: 12px;
       text-align: center;
     }
 
     .space {
-      width: 24px;
-      height: 44px;
+      width: min(6vw, 24px);
+      height: min(9vw, 44px);
     }
 
     /* Compact mode for long trial names */
@@ -186,6 +186,10 @@
 
     .footer-links a:hover {
       text-decoration: underline;
+    }
+
+    .game {
+      box-sizing: border-box;
     }
 
     #submitTrial textarea,
