@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>journle</title>
   <style>
+    
     body {
       font-family: "Courier New", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
       background: #f4f6f8;
@@ -14,6 +15,15 @@
       min-height: 100vh;
       margin: 0;
       padding-top: 2rem;
+      overflow-x: hidden;
+    }
+
+    h1 {
+      margin-bottom: 0.25rem;
+      font-family: "Courier New", serif;
+    }
+    
+    p { color: #555; font-size: 0.9rem;
     }
 
     .game {
@@ -21,23 +31,22 @@
       padding: 2rem;
       border-radius: 12px;
       box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-      width: 460px;
+      width: 95%;
+      max-width: 460px;
       text-align: center;
+      box-sizing: border-box;
     }
-    h1 {
-      margin-bottom: 0.25rem;
-      font-family: "Courier New", serif;
-    }
-    p { color: #555; font-size: 0.9rem; }
 
     .field-buttons {
       display: flex;
       justify-content: center;
       gap: 0.5rem;
       margin-top: 0.75rem;
+      flex-wrap: wrap;
     }
 
     .field-btn {
+      width: auto;
       padding: 0.4rem 0.8rem;
       border: 1px solid #4f46e5;
       border-radius: 6px;
@@ -45,6 +54,7 @@
       color: #4f46e5;
       cursor: pointer;
       font-weight: bold;
+      flex: 0 0 auto;
     }
 
     .field-btn.active {
@@ -77,19 +87,20 @@
     .letters, .row {
       display: flex;
       justify-content: center;
-      gap: 0.5rem;
+      margin: 0 3px;
       margin-top: 0.75rem;
     }
 
     input.letter {
-      width: 44px;
-      height: 44px;
+      width: var(--letter-size, 44px);
+      height: var(--letter-size, 44px);
+      font-size: calc(var(--letter-size, 44px) * 0.5);
       text-align: center;
-      font-size: 1.3rem;
       font-weight: bold;
       text-transform: uppercase;
       border: 2px solid #ccc;
       border-radius: 6px;
+      box-sizing: border-box;
     }
 
     .correct { background: #16a34a; color: white; border-color: #16a34a; }
@@ -122,50 +133,18 @@
     .message { margin-top: 0.75rem; font-weight: bold; }
 
     .hyphen {
-      font-size: 1.4rem;
+      font-size: calc(var(--letter-size, 44px) * 0.6);
       font-weight: bold;
-      line-height: 44px;
-      width: 12px;
+      line-height: var(--letter-size, 44px);
+      width: calc(var(--letter-size, 44px) * 0.3);
       text-align: center;
+      flex: 0 0 auto;
     }
 
     .space {
-      width: 24px;
-      height: 44px;
-    }
-
-    /* Compact mode for long trial names */
-    .compact input.letter {
-      width: 28px;
-      height: 28px;
-      font-size: 0.9rem;
-    }
-
-    .compact .hyphen {
-      font-size: 1.1rem;
-      line-height: 28px;
-    }
-
-    .compact .space {
-      width: 14px;
-      height: 28px;
-    }
-
-    /* Ultra-compact mode (≥10 letters) */
-    .ultracompact input.letter {
-      width: 14px;
-      height: 14px;
-      font-size: 0.5rem;
-    }
-
-    .ultracompact .hyphen {
-      font-size: 0.7rem;
-      line-height: 16px;
-    }
-
-    .ultracompact .space {
-      width: 7px;
-      height: 16px;
+      width: calc(var(--letter-size, 44px) * 0.6);
+      height: var(--letter-size, 44px);
+      flex: 0 0 auto;
     }
 
     .footer-links {
@@ -246,13 +225,13 @@
     </div>
 
     <div class="footer-links">
-    Support journle.club: 
+    Support journle: 
     <a
       href="https://www.buymeacoffee.com/YOUR_USERNAME"
       target="_blank"
       rel="noopener noreferrer"
     >
-      🤖 Help with server fees
+      🤖 Feed server bot
     </a>
     ·
     <a href="#" onclick="openSubmitTrial(); return false;">
@@ -1918,6 +1897,9 @@
       }
     });
 
+    // add resize letter listener
+    window.addEventListener('resize', resizeLetters);
+
     // add a trial loader
     // window.addEventListener("load", loadPuzzleFromURL);
 
@@ -2050,7 +2032,6 @@
       setGameMode("archive");
       loadArchiveTrial(match);
       updateModeButtonUI();
-      console.log('hey I ran updateModeButtonUI')
     }
 
     function newGame() {
@@ -2155,12 +2136,16 @@
             document.getElementById("shareBtn").style.display = "block";
           }
 
+          // resize letters for long hints
+          resizeLetters();
+
           return;
         }
       }
 
       setupInputs();
       addHint();
+      resizeLetters();
     }
 
     function openSubmitTrial() {
@@ -2282,6 +2267,36 @@
       //        ${trial.doi}
       //      </a>`;
       // }
+    }
+
+    function resizeLetters() {
+      const row = document.querySelector('.letters');
+      if (!row) return;
+
+      const letters = row.querySelectorAll('.letter');
+      if (letters.length === 0) return;
+
+      const container = document.querySelector('.game');
+
+      const containerWidth = container.clientWidth;
+
+      const letterCount = letters.length;
+
+      const horizontalPadding = 40; // safety buffer
+      const marginPerLetter = 6; // 3px left + 3px right
+
+      const availableWidth = containerWidth - horizontalPadding;
+
+      const calculatedSize = Math.floor(
+        availableWidth / letterCount - marginPerLetter
+      );
+
+      const finalSize = Math.min(calculatedSize, 44); // never exceed desktop size
+
+      document.documentElement.style.setProperty(
+        '--letter-size',
+        finalSize + 'px'
+      );
     }
 
     function revealAllHints() {
@@ -2738,6 +2753,7 @@
       updateShareButtonVisibility();
       updateArchiveSearchVisibility();
       loadPuzzleFromURL();
+      resizeLetters();
 
       console.log("✅ Debug puzzle loaded");
     };
