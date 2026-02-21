@@ -42,7 +42,7 @@ def openfile(infile):
 # define main function
 def main():
     # solicit input from user
-    pref = input("Welcome to dateSetter 3000! Please choose 1 to replace all blank dates or 9 to replace ALL dates. ")
+    pref = input("\nWelcome to JOURNLE Date Setter!\n\n>>Please choose 1 to replace all blank dates, 8 to clear dates, or 9 to replace ALL dates.\n\n>>")
     print(pref)
     # open the HTML file for journ.le as text
     text = openfile('./index.html')
@@ -61,8 +61,21 @@ def main():
         repl_iter = iter(dateArray)
         textNew = re.sub(p, lambda match: next(repl_iter,match.group(0)), text)
         print(textNew)
+
+    elif pref == '8':
+    	warn = input('\n\n>> !Proceed with clearing dates (1=proceed)?\n>>')
+    	if warn == '1':
+            # use regular expressions to find the desired text
+            re.findall(r'(?<=releaseDate: )"([^"]*)"',text)
+        
+            # compile a regular expression that pulls every releaseDate field
+            p = re.compile(r'(?<=releaseDate: )"([^"]*)"')
+
+            textNew = re.sub(p,'""',text)
+            print(textNew)
+
     elif pref == '9':
-        warn = input('please confirm that you want to replace all old dates. This is a big deal! (1=proceed)')
+        warn = input('\n\n>> !Proceed with replacing all  dates (1=proceed)?\n>>')
         if warn == '1':
             # use regular expressions to find the desired text
             re.findall(r'(?<=releaseDate: )"([^"]*)"',text)
@@ -78,7 +91,7 @@ def main():
             textNew = re.sub(p, lambda match: next(repl_iter,match.group(0)), text)
             print(textNew)
     else:
-        print ('that was not a valid selection! ending program.')
+        print ('>> !Invalid selection. Quitting.')
     
     savefile('./indexNew.html',textNew)
     
